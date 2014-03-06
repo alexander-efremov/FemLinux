@@ -1,7 +1,7 @@
 
 # Location of the CUDA Toolkit
-CUDA_PATH  ?= /Developer/NVIDIA/CUDA-6.0
-NVCC := $(CUDA_PATH)/bin/nvcc -ccbin clang
+CUDA_PATH  ?= /usr/local/cuda-5.0/
+NVCC := $(CUDA_PATH)/bin/nvcc -ccbin g++
 
 # internal flags
 NVCCFLAGS   := -m64 -O2
@@ -35,8 +35,8 @@ LIBRARIES += -lgtest -lgtest_main
 
 ################################################################################
 
-GENCODE_SM30    := -gencode arch=compute_30,code=sm_30
-GENCODE_FLAGS   ?= $(GENCODE_SM30)
+GENCODE_SM20    := -gencode arch=compute_20,code=sm_20
+GENCODE_FLAGS   ?= $(GENCODE_SM20)
 
 ################################################################################
 

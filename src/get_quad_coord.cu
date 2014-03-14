@@ -102,7 +102,7 @@ float get_quad_coord(TriangleResult* result, ComputeParameters* p)
 	checkCuda(cudaMalloc((void**)&(third1), size) );
 	checkCuda(cudaMalloc((void**)&(first2), size) );
 	checkCuda(cudaMalloc((void**)&(second2), size));
-	checkCuda(cudaMalloc((void**)&(third2), size) );
+	checkCuda(cudaMalloc((void**)&(third2), size) ); 
 
 
 	// можно это ядро раскидать на карточки 

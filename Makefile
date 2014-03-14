@@ -15,7 +15,7 @@ EXTRA_CCFLAGS     ?=
 
 # Debug build flags
 ifeq ($(dbg), 1)
-      NVCCFLAGS += -g -G 
+      NVCCFLAGS += -g -G -DDEBUG
 endif
 
 ALL_CCFLAGS :=

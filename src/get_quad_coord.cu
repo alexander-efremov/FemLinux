@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <hemi.h>
 #include "common.h"
 
 // assert() is only supported // for devices of compute capability 2.0 and higher 
@@ -58,20 +59,14 @@ __global__ void get_square_coord(double* first1, double* second1, double* third1
 	}
 }
 
-void convert(TriangleResult* result, double* first1, double* second1, double* third1,
-	double* first2, double* second2, double* third2, size_t size)
-{
-
-}
-
 float get_quad_coord(TriangleResult* result, ComputeParameters* p)
 {
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 	size_t size(0), n(0);
-	int gridSize = 512;
-	int blockSize = 1024;
+	int gridSize = 256;
+	int blockSize =  512;
 	double temp(0);
 	n = p->get_inner_matrix_size();
 
@@ -102,12 +97,12 @@ float get_quad_coord(TriangleResult* result, ComputeParameters* p)
 	cudaMemcpyToSymbol(c_pi_half, &temp, sizeof(double));
 
 	size = 2 * sizeof(double)*n;
-	cudaMalloc((void**)&(first1), size);
-	cudaMalloc((void**)&(second1), size);
-	cudaMalloc((void**)&(third1), size);
-	cudaMalloc((void**)&(first2), size);
-	cudaMalloc((void**)&(second2), size);
-	cudaMalloc((void**)&(third2), size);
+	checkCuda(cudaMalloc((void**)&(first1), size) );
+	checkCuda(cudaMalloc((void**)&(second1), size));
+	checkCuda(cudaMalloc((void**)&(third1), size) );
+	checkCuda(cudaMalloc((void**)&(first2), size) );
+	checkCuda(cudaMalloc((void**)&(second2), size));
+	checkCuda(cudaMalloc((void**)&(third2), size) );
 
 
 	// можно это ядро раскидать на карточки 

@@ -196,7 +196,7 @@ protected:
 
 TEST_F(GpuTest, get_quad_coord)
 {
-	const int finishLevel = 7;
+	const int finishLevel = 10;
 	const int startLevel = 0;
 	const double error = 1.0e-15;
 
@@ -206,7 +206,8 @@ TEST_F(GpuTest, get_quad_coord)
 		ComputeParameters* p = new ComputeParameters(level, false);
 		p->currentTimeLevel = 1;
 		TriangleResult* gpu = new TriangleResult(p);
-		get_quad_coord(gpu, p);
+		float t = get_quad_coord(gpu, p);
+		printf("gpu time elapsed = %f\n", t);
 		double first_x1(0), second_x1(0), third_x1(0), first_x2(0), second_x2(0), third_x2(0);
 		double first_y1(0), second_y1(0), third_y1(0), first_y2(0), second_y2(0), third_y2(0);
 
@@ -255,12 +256,13 @@ TEST_F(GpuTest, get_quad_coord_te)
 	double time_cpu (-1), time_gpu(0);
 	double first_x1(0), second_x1(0), third_x1(0), first_x2(0), second_x2(0), third_x2(0);
 	double first_y1(0), second_y1(0), third_y1(0), first_y2(0), second_y2(0), third_y2(0);
-	int finish_level = 9;
+	int finish_level = 10;
 	int start_level = 8;
 
 
 	for (int level = start_level; level < finish_level; level++)
 	{
+		printf("level %d \n", level);
 		ComputeParameters* p = new ComputeParameters(level, false);
 		p->currentTimeLevel = 1;
 

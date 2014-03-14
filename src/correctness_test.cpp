@@ -217,7 +217,7 @@ TEST_F(GpuTest, get_quad_coord)
 			{
 				p->i = i;
 				p->j = j;
-
+ 
 				h_quadrAngleType(p, 
 					&first_x1, &second_x1, &third_x1, &first_x2, &second_x2, &third_x2,
 					&first_y1, &second_y1, &third_y1, &first_y2, &second_y2, &third_y2);

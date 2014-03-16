@@ -3,14 +3,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <hemi.h>
+#include "hemi.h"
 #include "common.h"
+#include <omp.h>
 
 // assert() is only supported // for devices of compute capability 2.0 and higher 
 #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ < 200) 
 #undef  assert 
 #define assert(arg) 
 #endif
+
+int get_cuda_device_count()
+{
+   int count = 1;
+   cudaGetDeviceCount(&count);
+   return count;
+}
 
 __constant__ double c_tau;
 __constant__ double c_h;
@@ -104,6 +112,17 @@ float get_quad_coord(TriangleResult* result, ComputeParameters* p)
 	checkCuda(cudaMalloc((void**)&(second2), size));
 	checkCuda(cudaMalloc((void**)&(third2), size) );  
 	
+	
+	
+	int deviceCount = get_cuda_device_count();
+	omp_set_num_threads(deviceCount);
+	#pragma omp parallel
+	{
+	int cpuId = omp_get_thread_num();
+	// cudaSetDevice(cpuId);
+	printf("Hi! I'm %d thread!\n", cpuId);
+	}
+
 
 
 	// можно это ядро раскидать на карточки 

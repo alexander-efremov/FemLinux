@@ -251,6 +251,63 @@ TEST_F(GpuTest, get_quad_coord)
 	std::cin.get();
 }
 
+TEST_F(GpuTest, main_test)
+{
+	const int finishLevel = 10;
+	const int startLevel = 0;
+	const double error = 1.0e-15;
+
+	for (int level = startLevel; level < finishLevel; ++level)
+	{
+		std::cout << "level = " << level << std::endl;
+		ComputeParameters* p = new ComputeParameters(level, false);
+		p->currentTimeLevel = 1;
+		TriangleResult* gpu = new TriangleResult(p);
+		float t = get_quad_coord(gpu, p);
+		printf("gpu time elapsed = %f\n", t);
+		double first_x1(0), second_x1(0), third_x1(0), first_x2(0), second_x2(0), third_x2(0);
+		double first_y1(0), second_y1(0), third_y1(0), first_y2(0), second_y2(0), third_y2(0);
+
+		for (int j = 1; j < p->y_size; j++)
+		{
+			for (int i = 1; i < p->x_size; i++)
+			{
+				p->i = i;
+				p->j = j;
+ 
+				h_quadrAngleType(p, 
+					&first_x1, &second_x1, &third_x1, &first_x2, &second_x2, &third_x2,
+					&first_y1, &second_y1, &third_y1, &first_y2, &second_y2, &third_y2);
+				int c = (p->x_size - 1) * (j - 1) + (i - 1);
+
+				bool b1 = (fabs(gpu->first1[2 * c] - first_x1) < error) && (fabs(gpu->first1[2 * c + 1] - first_y1) < error);
+				ASSERT_TRUE(b1) << "c = " << c << std::endl;
+				bool b2 = (fabs(gpu->second1[2 * c] - second_x1) < error) && (fabs(gpu->second1[2 * c + 1] - second_y1) < error);
+				ASSERT_TRUE(b2) << "c = " << 2 * c << std::endl;
+				bool b3 = (fabs(gpu->third1[2 * c] - third_x1) < error) && (fabs(gpu->third1[2 * c + 1] - third_y1) < error);
+				ASSERT_TRUE(b3) << "c = " << 2 * c << std::endl;
+
+				ASSERT_TRUE(b1&&b2&&b3) << "c = " << c << std::endl;
+
+				bool b4 = (fabs(gpu->first2[2 * c] - first_x2) < error) && (fabs(gpu->first2[2 * c + 1] - first_y2) < error);
+				ASSERT_TRUE(b4) << "c = " << 2 * c << std::endl;
+
+				bool b5 = (fabs(gpu->second2[2 * c] - second_x2) < error) && (fabs(gpu->second2[2 * c + 1] - second_y2) < error);
+				ASSERT_TRUE(b5) << "c = " << 2 * c << std::endl;
+
+				bool b6 = (fabs(gpu->third2[2 * c] - third_x2) < error) && (fabs(gpu->third2[2 * c + 1] - third_y2) < error);
+				ASSERT_TRUE(b6) << "c = " << 2 * c << std::endl;
+
+				ASSERT_TRUE(b3&&b5&&b6) << "c = " << 2 * c << std::endl;
+			}
+		}
+		delete p;
+		delete gpu;
+	}
+	std::cout << "Done!" << std::endl;
+	std::cin.get();
+}
+
 TEST_F(GpuTest, get_quad_coord_te)
 {
 	double time_cpu (-1), time_gpu(0);

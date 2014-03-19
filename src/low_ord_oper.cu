@@ -2240,6 +2240,65 @@ double d_solByEqualVolumes(ComputeParameters p)
 
 float solve_cuda_params(ComputeParameters p)
 {
+double *rhoInPrevTL_asV;
+    double spVolInPrevTL;
+
+    rhoInPrevTL_asV = new double [ p.size ];
+    //   Initial data of rho.
+    for( int k = 0; k <= p.x_size; k++ ) {
+        for( int j = 0; j <= p.y_size; j++ ) {
+            rhoInPrevTL_asV[ (p.x_size+1)*k + j ]  =  d_initDataOfSol(p, j, k);
+        }
+    }
+
+    for( int currentTimeLevel = 1; currentTimeLevel <= p.t_count; currentTimeLevel++ ) {
+
+        std::cout<<"\r \t \t \t \t \t \t \t \t \r";
+        std::cout << " Nx = " <<  p.x_size;
+        std::cout << ", indexOfCurrTL = " << currentTimeLevel << " ( " << p.t_count << " ) " << std::flush;
+
+       
+        //  Compute boundaries
+        for(int i = 0; i  <= p.x_size; ++i) {
+            p.i = i;
+            p.result[ i  ]  =   h_bottomBound(p);
+            p.result[ (p.x_size + 1)*p.y_size + i  ]  =   h_upperBound(p);
+        }
+        for( int j = 0; j <= p.y_size; ++j) {
+            p.j = j;
+            p.result[ (p.x_size + 1)*j ]  =  h_leftBound(p);
+            p.result[ (p.x_size + 1)*j  +  p.x_size ]  =  h_rightBound(p);
+        }
+
+		
+        for( int j = 1; j < p.y_size; j++ ) {
+            for( int i = 1; i < p.x_size; i++ ) {
+
+                p.currentTimeLevel = currentTimeLevel;
+                p.i = i;
+                p.j = j;
+
+                spVolInPrevTL  =  d_spaceVolumeInPrevTL(p, rhoInPrevTL_asV );
+
+                double buf_D  =  (p.x[i + 1]  -  p.x[i - 1]) /2.;
+                spVolInPrevTL  =  spVolInPrevTL / buf_D;
+
+                buf_D  =  (p.y[j + 1]  -  p.y[j - 1]) /2.;
+                spVolInPrevTL  =  spVolInPrevTL / buf_D;
+
+                p.result[ (p.x_size + 1)*j + i ]  =  spVolInPrevTL;
+                p.result[ (p.x_size + 1)*j + i ] +=  p.tau * h_f_function(p, currentTimeLevel, i, j);
+            }
+        }
+
+        for( int i = 0; i < p.size; i++ ) {
+            rhoInPrevTL_asV[ i ]  =  p.result[ i ];
+        }
+    }
+
+    delete[] rhoInPrevTL_asV;
+    std::cout << std::endl;
+    return 1;
     return 1.0;
 }
 

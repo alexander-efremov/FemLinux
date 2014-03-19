@@ -8,6 +8,11 @@ NVCCFLAGS   := -m64 -O2
 CCFLAGS     := -O2 -fopenmp
 LDFLAGS     := 
 
+
+ifeq ($(flagman), 1)
+   NVCCFALGS += -DFLAGMAN
+endif
+
 # Extra user flags
 EXTRA_NVCCFLAGS   ?=
 EXTRA_LDFLAGS     ?= -L./lib

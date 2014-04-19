@@ -98,10 +98,6 @@ struct ComputeParameters
 private:
 	int time_i;
 	bool _initresult;
-
-	
-
-
 public:
 	double a;
 	double b;
@@ -125,6 +121,7 @@ public:
 	ComputeParameters(int level, bool initresult) : currentTimeLevel(1), t_count(0)
 	{
 		_initresult = initresult;
+
 		a = C_par_a;
 		b = C_par_b;
 		lb = C_lbDom;
@@ -158,8 +155,11 @@ public:
 
 		y_size = m;
 		size = (n + 1) * (m + 1);
+		result = NULL;
 		if (initresult)
-			result = new double[size];
+			{
+				result = new double[size];
+			}
 	}
 
 	~ComputeParameters()
@@ -258,6 +258,11 @@ public:
 	int get_inner_matrix_size()
 	{
 		return (get_real_x_size() - 2) * (get_real_y_size() - 2);
+	}
+
+	int get_real_matrix_size()
+	{
+		return (get_real_x_size()) * (get_real_y_size());
 	}
 
 	// получает размер внутренней матрицы
@@ -765,7 +770,7 @@ extern double analytSolut(
 	double ubDom,
 	//
 	double t, double x, double y );
-
+extern float solve_at_gpu(ComputeParameters* p);
 
 extern void cuda_solve(
 	double par_a, //   -  Item of left and right setback (parameter "a" in test).

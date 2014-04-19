@@ -2,10 +2,26 @@
 #include "cuda_runtime.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "math.h"
 #include "hemi.h"
 #include "common.h"
 
+__constant__ double c_tau;
+__constant__ double c_h;
+__constant__ double c_a;
+__constant__ double c_b;
+__constant__ double c_tau_to_current_time_level;
+__constant__ double c_lb;
+__constant__ double c_rb;
+__constant__ double c_ub;
+__constant__ double c_bb;
+__constant__ double c_tau_b;
+__constant__ double c_pi_half;
+__constant__ int c_x_length;
+__constant__ int c_n;
+__constant__ int c_x_st_number;
+__constant__ int c_y_st_number;
 
 double u_function_cuda(double par_b, double t, double x, double y)
 {
@@ -1883,24 +1899,24 @@ __device__ double d_integUnderUnunifTr(
 
 
 
-__device__ double d_f_function(ComputeParameters p, const int currentTimeLevel, const int i, const int j)
+__device__ double d_f_function(const int i, const int j)
 {
-    double t  =  p.tau * currentTimeLevel;
-    double x  =  p.x[ i ];
-    double y  =  p.y[ j ];
+    
+    double x  =  c_h * i ;
+    double y  =  c_h * j ;
 
-    double arg_v  =  (x - p.lb) * (x - p.rb) * (1.+t) /10. * (y - p.ub) * (y - p.bb);
+    double arg_v  =  (x - c_lb) * (x - c_rb) * (1.+c_tau_to_current_time_level) /10. * (y - c_ub) * (y - c_bb);
     double rho, dRhoDT, dRhoDX, dRhoDY;
     double u, duDX;
     double v, dvDY;
-    rho  =  d_analytSolut(t, x, y );
-    dRhoDT  =  x * y * cos( t*x*y );
-    dRhoDX  =  t * y * cos( t*x*y );
-    dRhoDY  =  t * x * cos( t*x*y );
-    u  =  d_u_function(p.b, t, x, y );
-    duDX  = -p.b * y * (1.-y)  /  ( 1.  +  x * x );
-    v  =  d_v_function(p.lb, p.rb, p.bb, p.ub, t, x, y );
-    dvDY  =  (x - p.lb) * (x - p.rb) * (1.+t) /10. * (y - p.bb + y - p.ub);
+    rho  =  d_analytSolut(c_tau_to_current_time_level, x, y );
+    dRhoDT  =  x * y * cos( c_tau_to_current_time_level*x*y );
+    dRhoDX  =  c_tau_to_current_time_level * y * cos( c_tau_to_current_time_level*x*y );
+    dRhoDY  =  c_tau_to_current_time_level * x * cos( c_tau_to_current_time_level*x*y );
+    u  =  d_u_function(c_b, c_tau_to_current_time_level, x, y );
+    duDX  = -c_b * y * (1.-y)  /  ( 1.  +  x * x );
+    v  =  d_v_function(c_lb, c_rb, c_bb, c_ub, c_tau_to_current_time_level, x, y );
+    dvDY  =  (x - c_lb) * (x - c_rb) * (1.+c_tau_to_current_time_level) /10. * (y - c_bb + y - c_ub);
     dvDY  =  dvDY  /  ( 1.  +  arg_v * arg_v );
     return dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
 }
@@ -2072,7 +2088,7 @@ double d_normOfMatrAtL1_asV(
     return hx * hy * norm;
 }
 
-__global__ void kernel(ComputeParameters p, double *rhoInPrevTL_asV, double* result, int length, int x_length, int part_number, int chunk)
+__global__ void kernel1(ComputeParameters p, double *rhoInPrevTL_asV, double* result, int length, int x_length, int part_number, int chunk)
 {
 //	const int offset = hemiGetElementOffset();
 //	const int stride = hemiGetElementStride();
@@ -2238,67 +2254,153 @@ double d_solByEqualVolumes(ComputeParameters p)
     return 1;
 }
 
-float solve_cuda_params(ComputeParameters p)
+__device__ double space_volume_in_prev_tl(int i, int j)
 {
-double *rhoInPrevTL_asV;
-    double spVolInPrevTL;
+        double first1[2]; double second1[2]; double third1[2];
+        double first2[2]; double second2[2]; double third2[2];
+        // get_square_coord
+        double x, y;
 
-    rhoInPrevTL_asV = new double [ p.size ];
-    //   Initial data of rho.
-    for( int k = 0; k <= p.x_size; k++ ) {
-        for( int j = 0; j <= p.y_size; j++ ) {
-            rhoInPrevTL_asV[ (p.x_size+1)*k + j ]  =  d_initDataOfSol(p, j, k);
-        }
-    }
+        // A
 
-    for( int currentTimeLevel = 1; currentTimeLevel <= p.t_count; currentTimeLevel++ ) {
+        x = (c_h*(i - 1) + c_h*i) / 2.;
+        y = (c_h*(j - 1) + c_h*j) / 2.;
+        first1[0] = first2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+        first1[1] = first2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
 
-        std::cout<<"\r \t \t \t \t \t \t \t \t \r";
-        std::cout << " Nx = " <<  p.x_size;
-        std::cout << ", indexOfCurrTL = " << currentTimeLevel << " ( " << p.t_count << " ) " << std::flush;
+        // B
+        x = (c_h*(i + 1) + c_h*i) / 2.;
+        second1[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+        second1[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
 
-       
-        //  Compute boundaries
-        for(int i = 0; i  <= p.x_size; ++i) {
-            p.i = i;
-            p.result[ i  ]  =   h_bottomBound(p);
-            p.result[ (p.x_size + 1)*p.y_size + i  ]  =   h_upperBound(p);
-        }
-        for( int j = 0; j <= p.y_size; ++j) {
-            p.j = j;
-            p.result[ (p.x_size + 1)*j ]  =  h_leftBound(p);
-            p.result[ (p.x_size + 1)*j  +  p.x_size ]  =  h_rightBound(p);
-        }
+        // C
+        y = (c_h*(j + 1) + c_h*j) / 2.;
+        third1[0] = third2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+        third1[1] = third2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
 
-		
-        for( int j = 1; j < p.y_size; j++ ) {
-            for( int i = 1; i < p.x_size; i++ ) {
+        // D 
+        x = (c_h*(i - 1) + c_h*i) / 2.;
+        second2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+        second2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
 
-                p.currentTimeLevel = currentTimeLevel;
-                p.i = i;
-                p.j = j;
+        return 1;
+}
 
-                spVolInPrevTL  =  d_spaceVolumeInPrevTL(p, rhoInPrevTL_asV );
+__global__ void kernel(double* result)
+{
+    for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
+    {
 
-                double buf_D  =  (p.x[i + 1]  -  p.x[i - 1]) /2.;
-                spVolInPrevTL  =  spVolInPrevTL / buf_D;
+        // расчет границы
 
-                buf_D  =  (p.y[j + 1]  -  p.y[j - 1]) /2.;
-                spVolInPrevTL  =  spVolInPrevTL / buf_D;
+        if (opt >= c_x_st_number) 
+        {
+            //int tempX = numOfOXSt + 1; = c_x_st_number
+            double y;
+            double x = c_tau_to_current_time_level * c_h*(opt);
+            result[ opt ]  = 1.1  +  sin( x * c_bb );
+            
+            unsigned ind_1 = c_x_st_number * (c_y_st_number - 1) + opt; 
+            x = c_tau_to_current_time_level * c_h*( opt );
+            result[ ind_1 ] = 1.1  +  sin(  x * c_ub );
 
-                p.result[ (p.x_size + 1)*j + i ]  =  spVolInPrevTL;
-                p.result[ (p.x_size + 1)*j + i ] +=  p.tau * h_f_function(p, currentTimeLevel, i, j);
+
+            if (opt < c_y_st_number) {  
+                ind_1 = c_x_st_number * opt;  
+                y = c_tau_to_current_time_level * c_h*(opt );
+                result[ ind_1 ] = 1.1  +  sin( y * c_lb );
+            }
+
+
+            if (opt < c_y_st_number) { 
+                ind_1 = c_x_st_number * (opt+1) - 1; 
+                y = c_tau_to_current_time_level * c_h*( opt );
+                result[ ind_1] = 1.1  +  sin(y * c_rb );
             }
         }
+        else 
+        {
+            int i = opt % c_x_length + 1;
+            int j = opt / c_x_length + 1;
+            double sp =  space_volume_in_prev_tl(i,j);
 
-        for( int i = 0; i < p.size; i++ ) {
-            rhoInPrevTL_asV[ i ]  =  p.result[ i ];
+            double buf_D  =  (c_h*(i + 1)  -  c_h*(i - 1)) /2.;
+            sp /= buf_D;
+
+            buf_D  =  (c_h*(j + 1)  -  c_h*(j - 1)) /2.;
+            sp /= buf_D;                         
+
+            result[ opt ]  =  sp;
+            result[ opt ] +=  c_tau * d_f_function(i,j);
         }
     }
+}
 
+double* init_rho(ComputeParameters *p)
+{
+    double *rhoInPrevTL_asV;
+
+    rhoInPrevTL_asV = new double [ p->size ];
+    //   Initial data of rho.
+    for( int k = 0; k <= p->x_size; k++ ) {
+        for( int j = 0; j <= p->y_size; j++ ) {
+            rhoInPrevTL_asV[ (p->x_size+1)*k + j ]  =  d_initDataOfSol(p, j, k);
+        }
+    }
+    return rhoInPrevTL_asV;
+}
+
+float solve_at_gpu(ComputeParameters *p)
+{
+    assert(p != NULL);
+    assert(p->result != NULL);
+    const int gridSize = 256;
+    const int blockSize =  512;
+    size_t n(0);
+    int temp_i(0);
+    double temp_d(0);
+    double *d_result = NULL;
+    n = p->get_real_matrix_size();
+    int size = sizeof(double)*n;
+    double *rhoInPrevTL_asV = init_rho(p);
+    cudaEvent_t start, stop;
+    float time;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaMemcpyToSymbol(c_tau, &p->tau, sizeof(double));
+    cudaMemcpyToSymbol(c_lb, &p->lb, sizeof(double));
+    cudaMemcpyToSymbol(c_a, &p->a, sizeof(double));
+    cudaMemcpyToSymbol(c_b, &p->b, sizeof(double));
+    cudaMemcpyToSymbol(c_rb, &p->rb, sizeof(double));
+    cudaMemcpyToSymbol(c_bb, &p->bb, sizeof(double));
+    cudaMemcpyToSymbol(c_ub, &p->ub, sizeof(double));
+    cudaMemcpyToSymbol(c_n, &n, sizeof(int));
+    temp_i = p->x_size - 1;
+    cudaMemcpyToSymbol(c_x_length, &temp_i, sizeof(int));
+    temp_d = 1. / (p->x_size);
+    cudaMemcpyToSymbol(c_h, &temp_d, sizeof(double));
+
+    temp_d = (1. + p->currentTimeLevel * p->tau) / 10.;
+    cudaMemcpyToSymbol(c_tau_to_current_time_level, &temp_d, sizeof(double));
+
+    temp_d = p->b * p->tau;
+    cudaMemcpyToSymbol(c_tau_b, &temp_d, sizeof(double));
+
+    temp_d = C_pi_device / 2.;
+    cudaMemcpyToSymbol(c_pi_half, &temp_d, sizeof(double));
+    
+    checkCuda(cudaMalloc((void**)&(d_result), size) );
+    cudaMemcpy(d_result, rhoInPrevTL_asV, size, cudaMemcpyHostToDevice);
+    
+    cudaEventRecord(start, 0);
+    kernel<<<gridSize, blockSize>>>(d_result);
+    cudaMemcpy(p->result, d_result, size, cudaMemcpyDeviceToHost);
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time, start, stop);
+    cudaFree(d_result);
+    cudaDeviceReset();
     delete[] rhoInPrevTL_asV;
-    std::cout << std::endl;
-    return 1;
-    return 1.0;
+    return time;
 }
 

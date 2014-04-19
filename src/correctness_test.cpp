@@ -178,23 +178,37 @@ TEST_F(CpuTest, CpuTestModel1281)
 	}
 }
 
-class GpuTest : public TestBase
+class gputest : public TestBase
 {
 protected:
 
+    ModelDataProvider _modelDataProvider;
+	gputest()
+	{
+		_modelDataProvider = ModelDataProvider();
+	}
 
-	GpuTest()
+	virtual ~gputest()
 	{
 	}
 
-	virtual ~GpuTest()
+	void print_matrix(int n, int m, double* a)
 	{
+			for (int i = 0; i < n; ++i)
+			{
+				for (int j = 0; j < m; ++j)
+				{
+					int k = i*n + j;
+					printf("%f ", a[k]);
+				}
+				printf("\n");
+			}
 	}
 };
 
 
 
-TEST_F(GpuTest, get_quad_coord)
+TEST_F(gputest, get_quad_coord)
 {
 	const int finishLevel = 10;
 	const int startLevel = 0;
@@ -251,7 +265,7 @@ TEST_F(GpuTest, get_quad_coord)
 	std::cin.get();
 }
 
-TEST_F(GpuTest, main_test)
+TEST_F(gputest, main_test_old)
 {
 	const int finishLevel = 10;
 	const int startLevel = 0;
@@ -308,7 +322,36 @@ TEST_F(GpuTest, main_test)
 	std::cin.get();
 }
 
-TEST_F(GpuTest, get_quad_coord_te)
+TEST_F(gputest, main_test)
+{
+	const int finishLevel = 1;
+	const int startLevel = 0;
+	const double error = 1.0e-8;
+
+	for (int level = startLevel; level < finishLevel; ++level)
+	{
+		std::cout << "level = " << level << std::endl;
+		ComputeParameters* p = new ComputeParameters(level, true);
+	    ASSERT_TRUE(p->result != NULL);
+		float gpu_time = solve_at_gpu(p);
+        ASSERT_TRUE(gpu_time != -1);
+        double* data = _modelDataProvider.GetModelData(level);
+        print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
+        printf("%s\n", "");
+        print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
+        printf("%s\n", "Start testing...");
+		for (int i = 0; i < p->get_real_matrix_size(); i++)
+		{
+			ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
+		}
+
+		delete p;
+	}
+}
+
+
+
+TEST_F(gputest, get_quad_coord_te)
 {
 	double time_cpu (-1), time_gpu(0);
 	double first_x1(0), second_x1(0), third_x1(0), first_x2(0), second_x2(0), third_x2(0);

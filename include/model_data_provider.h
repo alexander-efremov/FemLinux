@@ -14,4 +14,5 @@ class ModelDataProvider
 public:
 
 	double* GetModelData(enum ModelDataType type);
+	double* GetModelData(int type);
 };

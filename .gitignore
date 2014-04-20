@@ -20,3 +20,6 @@
 *.out
 *.app
 test_fixture
+
+# Misc
+._Makefile

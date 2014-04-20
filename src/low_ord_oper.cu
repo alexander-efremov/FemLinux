@@ -12,6 +12,7 @@ __constant__ double c_h;
 __constant__ double c_a;
 __constant__ double c_b;
 __constant__ double c_tau_to_current_time_level;
+__constant__ double c_tau_to_current_time_level_to_h; // currentTimeLevel *  tau * h ( h = 1. / (p->x_size)) ;
 __constant__ double c_lb;
 __constant__ double c_rb;
 __constant__ double c_ub;
@@ -2286,42 +2287,38 @@ __device__ double space_volume_in_prev_tl(int i, int j)
         return 1;
 }
 
-__global__ void kernel(double* result)
+__global__ void kernel(double* prev_result, double* result)
 {
     for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
     {
-
+        int i = opt % c_x_st_number;
+        int j = opt / c_y_st_number;
+       
         // расчет границы
-
-        if (opt >= c_x_st_number) 
+        if (j == 0)  // bottom bound
         {
-            //int tempX = numOfOXSt + 1; = c_x_st_number
-            double y;
-            double x = c_tau_to_current_time_level * c_h*(opt);
-            result[ opt ]  = 1.1  +  sin( x * c_bb );
-            
-            unsigned ind_1 = c_x_st_number * (c_y_st_number - 1) + opt; 
-            x = c_tau_to_current_time_level * c_h*( opt );
-            result[ ind_1 ] = 1.1  +  sin(  x * c_ub );
-
-
-            if (opt < c_y_st_number) {  
-                ind_1 = c_x_st_number * opt;  
-                y = c_tau_to_current_time_level * c_h*(opt );
-                result[ ind_1 ] = 1.1  +  sin( y * c_lb );
-            }
-
-
-            if (opt < c_y_st_number) { 
-                ind_1 = c_x_st_number * (opt+1) - 1; 
-                y = c_tau_to_current_time_level * c_h*( opt );
-                result[ ind_1] = 1.1  +  sin(y * c_rb );
-            }
+            result[ opt ]  = 1.1  +  sin( c_tau_to_current_time_level_to_h * j * c_bb );
         }
-        else 
+        else if (i == 0) // left bound
         {
+            result[ opt ] = 1.1  +  sin( c_tau_to_current_time_level_to_h * i * c_lb );
+        }
+        else if (j == c_y_st_number - 1) // upper bound
+        { 
+            result[ opt ] = 1.1  +  sin( c_tau_to_current_time_level_to_h * i * c_ub );
+        }
+        else if (i == c_x_st_number - 1) // right bound
+        { 
+            result[ opt ] = 1.1  +  sin(  c_tau_to_current_time_level_to_h * j * c_rb );
+        }
+        
+        if (i > 0 && j > 0 && j != c_y_st_number - 1 && i != c_x_st_number - 1)
+        {
+            /*
+            result [opt] = -1;
             int i = opt % c_x_length + 1;
             int j = opt / c_x_length + 1;
+
             double sp =  space_volume_in_prev_tl(i,j);
 
             double buf_D  =  (c_h*(i + 1)  -  c_h*(i - 1)) /2.;
@@ -2332,6 +2329,7 @@ __global__ void kernel(double* result)
 
             result[ opt ]  =  sp;
             result[ opt ] +=  c_tau * d_f_function(i,j);
+            */
         }
     }
 }
@@ -2354,12 +2352,14 @@ float solve_at_gpu(ComputeParameters *p)
 {
     assert(p != NULL);
     assert(p->result != NULL);
-    const int gridSize = 256;
-    const int blockSize =  512;
+ //   const int gridSize = 256;
+  //  const int blockSize =  512;
+        const int gridSize = 1;
+    const int blockSize =  1;
     size_t n(0);
     int temp_i(0);
     double temp_d(0);
-    double *d_result = NULL;
+    double *d_result = NULL, *prev_result = NULL;
     n = p->get_real_matrix_size();
     int size = sizeof(double)*n;
     double *rhoInPrevTL_asV = init_rho(p);
@@ -2375,6 +2375,10 @@ float solve_at_gpu(ComputeParameters *p)
     cudaMemcpyToSymbol(c_bb, &p->bb, sizeof(double));
     cudaMemcpyToSymbol(c_ub, &p->ub, sizeof(double));
     cudaMemcpyToSymbol(c_n, &n, sizeof(int));
+    temp_i = p->get_real_x_size();
+    cudaMemcpyToSymbol(c_x_st_number, &temp_i, sizeof(int));
+    temp_i = p->get_real_y_size();
+    cudaMemcpyToSymbol(c_y_st_number, &temp_i, sizeof(int));
     temp_i = p->x_size - 1;
     cudaMemcpyToSymbol(c_x_length, &temp_i, sizeof(int));
     temp_d = 1. / (p->x_size);
@@ -2383,6 +2387,9 @@ float solve_at_gpu(ComputeParameters *p)
     temp_d = (1. + p->currentTimeLevel * p->tau) / 10.;
     cudaMemcpyToSymbol(c_tau_to_current_time_level, &temp_d, sizeof(double));
 
+    temp_d = p->currentTimeLevel * p->tau * 1. / (p->x_size);
+    cudaMemcpyToSymbol(c_tau_to_current_time_level_to_h, &temp_d, sizeof(double));
+
     temp_d = p->b * p->tau;
     cudaMemcpyToSymbol(c_tau_b, &temp_d, sizeof(double));
 
@@ -2390,15 +2397,17 @@ float solve_at_gpu(ComputeParameters *p)
     cudaMemcpyToSymbol(c_pi_half, &temp_d, sizeof(double));
     
     checkCuda(cudaMalloc((void**)&(d_result), size) );
-    cudaMemcpy(d_result, rhoInPrevTL_asV, size, cudaMemcpyHostToDevice);
+    checkCuda(cudaMalloc((void**)&(prev_result), size) );
+    cudaMemcpy(prev_result, rhoInPrevTL_asV, size, cudaMemcpyHostToDevice);
     
     cudaEventRecord(start, 0);
-    kernel<<<gridSize, blockSize>>>(d_result);
+    kernel<<<gridSize, blockSize>>>(prev_result, d_result);
     cudaMemcpy(p->result, d_result, size, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);
     cudaFree(d_result);
+    cudaFree(prev_result);
     cudaDeviceReset();
     delete[] rhoInPrevTL_asV;
     return time;

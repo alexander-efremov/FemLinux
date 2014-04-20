@@ -7,7 +7,7 @@
 #ifndef COMMON_H_INCLUDED
 #include "common.h"
 #endif
-#define FULL_TEST true
+#define FULL_TEST false
 
 class TestBase : public testing::Test
 {
@@ -51,15 +51,15 @@ protected:
 	}
 };
 
-class CpuTest : public TestBase
+class cputest : public TestBase
 {
 protected:
 
-	CpuTest()
+	cputest()
 	{
 	}
 
-	virtual ~CpuTest()
+	virtual ~cputest()
 	{
 	}
 
@@ -71,7 +71,7 @@ protected:
 	}
 };
 
-TEST_F(CpuTest, CpuTestModel11)
+TEST_F(cputest, CpuTestModel11)
 {
 	double* data = _modelDataProvider.GetModelData(Model11);
 	double* result = GetCpuToLevel(0);
@@ -83,7 +83,7 @@ TEST_F(CpuTest, CpuTestModel11)
 	}
 }
 
-TEST_F(CpuTest, CpuTestModel21)
+TEST_F(cputest, CpuTestModel21)
 {
 	double* data = _modelDataProvider.GetModelData(Model21);
 	double* result = GetCpuToLevel(1);
@@ -94,7 +94,7 @@ TEST_F(CpuTest, CpuTestModel21)
 	}
 }
 
-TEST_F(CpuTest, CpuTestModel41)
+TEST_F(cputest, CpuTestModel41)
 {
 	if (FULL_TEST)
 	{
@@ -108,7 +108,7 @@ TEST_F(CpuTest, CpuTestModel41)
 	}
 }
 
-TEST_F(CpuTest, CpuTestModel81)
+TEST_F(cputest, CpuTestModel81)
 {
 	if (FULL_TEST)
 	{
@@ -122,7 +122,7 @@ TEST_F(CpuTest, CpuTestModel81)
 	}
 }
 
-TEST_F(CpuTest, CpuTestModel161)
+TEST_F(cputest, CpuTestModel161)
 {
 	if (FULL_TEST)
 	{
@@ -136,7 +136,7 @@ TEST_F(CpuTest, CpuTestModel161)
 	}
 }
 
-TEST_F(CpuTest, CpuTestModel321)
+TEST_F(cputest, CpuTestModel321)
 {
 	if (FULL_TEST)
 	{
@@ -150,7 +150,7 @@ TEST_F(CpuTest, CpuTestModel321)
 	}
 }
 
-TEST_F(CpuTest, CpuTestModel641)
+TEST_F(cputest, CpuTestModel641)
 {
 	if (FULL_TEST)
 	{
@@ -164,7 +164,7 @@ TEST_F(CpuTest, CpuTestModel641)
 	}
 }
 
-TEST_F(CpuTest, CpuTestModel1281)
+TEST_F(cputest, CpuTestModel1281)
 {
 	if (FULL_TEST)
 	{
@@ -199,10 +199,17 @@ protected:
 				for (int j = 0; j < m; ++j)
 				{
 					int k = i*n + j;
-					printf("%f ", a[k]);
+					printf("%.8f ", a[k]);
 				}
 				printf("\n");
 			}
+	}
+
+	double* GetCpuToLevel(int level)
+	{
+		return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
+			C_ubDom, C_tau, C_numOfTSt, masOX, C_numOfOXSt, masOY,
+			C_numOfOYSt, level);
 	}
 };
 
@@ -261,11 +268,9 @@ TEST_F(gputest, get_quad_coord)
 		delete p;
 		delete gpu;
 	}
-	std::cout << "Done!" << std::endl;
-	std::cin.get();
 }
 
-TEST_F(gputest, main_test_old)
+TEST_F(gputest, DISABLED_main_test_old)
 {
 	const int finishLevel = 10;
 	const int startLevel = 0;
@@ -318,38 +323,7 @@ TEST_F(gputest, main_test_old)
 		delete p;
 		delete gpu;
 	}
-	std::cout << "Done!" << std::endl;
-	std::cin.get();
 }
-
-TEST_F(gputest, main_test)
-{
-	const int finishLevel = 1;
-	const int startLevel = 0;
-	const double error = 1.0e-8;
-
-	for (int level = startLevel; level < finishLevel; ++level)
-	{
-		std::cout << "level = " << level << std::endl;
-		ComputeParameters* p = new ComputeParameters(level, true);
-	    ASSERT_TRUE(p->result != NULL);
-		float gpu_time = solve_at_gpu(p);
-        ASSERT_TRUE(gpu_time != -1);
-        double* data = _modelDataProvider.GetModelData(level);
-        print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
-        printf("%s\n", "");
-        print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
-        printf("%s\n", "Start testing...");
-		for (int i = 0; i < p->get_real_matrix_size(); i++)
-		{
-			ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
-		}
-
-		delete p;
-	}
-}
-
-
 
 TEST_F(gputest, get_quad_coord_te)
 {
@@ -404,6 +378,67 @@ TEST_F(gputest, get_quad_coord_te)
 		delete gpu;
 		delete p;
 	}
+}
+
+
+
+TEST_F(gputest, DISABLED_main_test)
+{
+	const int finishLevel = 1;
+	const int startLevel = 0;
+	const double error = 1.0e-8;
+
+	for (int level = startLevel; level < finishLevel; ++level)
+	{
+		std::cout << "level = " << level << std::endl;
+		ComputeParameters* p = new ComputeParameters(level, true);
+	    ASSERT_TRUE(p->result != NULL);
+		float gpu_time = solve_at_gpu(p);
+        ASSERT_TRUE(gpu_time != -1);
+        double* data = _modelDataProvider.GetModelData(level);
+        print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
+        printf("%s\n", "");
+        print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
+        printf("%s\n", "Start testing...");
+		for (int i = 0; i < p->get_real_matrix_size(); i++)
+		{
+			ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
+		}
+
+		delete p;
+	}
+}
+
+TEST_F(gputest, main_test_1tl)
+{
+	const int finishLevel = 1;
+	const int startLevel = 0;
+	const double error = 1.0e-8;
+
+	ComputeParameters* p = new ComputeParameters(0, true);
+    ASSERT_TRUE(p->result != NULL);
+	float gpu_time = solve_at_gpu(p);
+    ASSERT_TRUE(gpu_time != -1);
+    double* data = _modelDataProvider.GetModelData1tl(0);
+    print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
+    printf("%s\n", "");
+    print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
+    printf("%s\n", "Start testing...");
+	for (int i = 0; i < p->get_real_matrix_size(); i++)
+	{
+		ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
+	}
+
+	delete p;
+}
+
+TEST_F(gputest, gen_1tl)
+{
+	const int finishLevel = 1;
+	const int startLevel = 0;
+	const double error = 1.0e-8;
+	double* tl1 = GetCpuToLevel(0);
+	print_matrix(11, 11, tl1);	
 }
 
 class CpuVersusGpuFunctionalFemTest : public TestBase

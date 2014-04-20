@@ -2702,7 +2702,7 @@ double solByEqualVolumes(
 		cout << "SchOrd = " << numOfSolOrd << ", Nx = " << numOfOXSt;
 		cout << ", count of time levels " << numOfTSt;
 	}
-
+   numOfTSt = 1;
 	for( iCurrTL = 1; iCurrTL < numOfTSt + 1; iCurrTL++ )
 	{
 		if (canPrint)
@@ -2716,11 +2716,26 @@ double solByEqualVolumes(
 		//   If we know solution on the boundary we can use it.
 		for( iOfOXN = 0; iOfOXN < numOfOXSt + 1; iOfOXN++ )
 		{
+		//	if (iOfOXN==0)
+		//	{
+			//	printf("bb = %f\n", bbDom);
+		//	}
+		//	double t = bottonBound( par_a, lbDom, rbDom, bbDom, ubDom, tau*iCurrTL, masOX[ iOfOXN ] );
+		//	printf("bottom = %f\n", t);
 			//   Bottom boundary.
 			rhoInCurrTL_asV[ iOfOXN ] = bottonBound( par_a, lbDom, rbDom, bbDom, ubDom, tau*iCurrTL, masOX[ iOfOXN ] );
 
 			//   Upper boundary.
 			rhoInCurrTL_asV[ (numOfOXSt + 1)*numOfOYSt + iOfOXN ] = upperBound( par_a, lbDom, rbDom, bbDom, ubDom, tau*iCurrTL, masOX[ iOfOXN ] );
+			 double t = upperBound( par_a, lbDom, rbDom, bbDom, ubDom, tau*iCurrTL, masOX[ iOfOXN ] );
+			 t = 1.1 + sin( tau*iCurrTL * masOX[ iOfOXN ] * ubDom);
+			
+			 t = 1.1 + sin( tau*iCurrTL * masOX[ iOfOXN ] * ubDom);
+			 printf("t= %f\n", t);
+			 printf("ubDom = %f \n", ubDom);
+			 printf("tau*iCurrTL  %f \n", tau*iCurrTL );
+			 printf("masOX[iOfOXN] = %f\n", masOX[iOfOXN]);
+			 printf("sin( tau*iCurrTL * masOX[ iOfOXN ] * ubDom) = %f \n", sin( tau*iCurrTL * masOX[ iOfOXN ] * ubDom));
 		}
 
 		for( iOfOYN = 0; iOfOYN < numOfOYSt + 1; iOfOYN++ )

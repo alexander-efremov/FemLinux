@@ -2,7 +2,7 @@
 
 double* FileReader::ReadMatrixFromTextFile(const std::string &filename, int n, int m)
 {
-	double* result = new double[n*m];
+	double* result = new double[n*m]();
 
 	std::ifstream file (filename.c_str());
 	if (!file.is_open()) return result;

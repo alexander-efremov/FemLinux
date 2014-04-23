@@ -1971,7 +1971,7 @@ float solve_at_gpu(ComputeParameters *p)
     size_t n(0);
     int temp_i(0);
     double temp_d(0);
-    double *d_result = NULL, *prev_result = NULL;
+    double *result = NULL, *prev_result = NULL;
     n = p->get_real_matrix_size();
     int size = sizeof(double)*n;
     double *rhoInPrevTL_asV = init_rho(p);
@@ -2008,30 +2008,27 @@ float solve_at_gpu(ComputeParameters *p)
     temp_d = C_pi_device / 2.;
     cudaMemcpyToSymbol(c_pi_half, &temp_d, sizeof(double));
     
-    checkCuda(cudaMalloc((void**)&(d_result), size) );
+    checkCuda(cudaMalloc((void**)&(result), size) );
     checkCuda(cudaMalloc((void**)&(prev_result), size) );
     cudaMemcpy(prev_result, rhoInPrevTL_asV, size, cudaMemcpyHostToDevice);
     
     cudaEventRecord(start, 0);
-    int tl = 0; 
+    /*int tl = 0; 
     int tempTl = p->t_count - 1;  
     while(tl < tempTl)
-    {       
-       // HEMI_KERNEL_LAUNCH(b_kernel, GridDimBound, BlockDimBound, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), tl + 1, dev_rhoInCurrTL);                 
-      //  HEMI_KERNEL_LAUNCH(kernel, GridDim, BlockDim, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), dev_rhoInPrevTL, dev_rhoInCurrTL, tl + 1);                    
-      //  HEMI_KERNEL_LAUNCH(b_kernel, GridDimBound, BlockDimBound, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), tl + 2, dev_rhoInPrevTL);         
-      //  HEMI_KERNEL_LAUNCH(kernel, GridDim, BlockDim, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), dev_rhoInCurrTL, dev_rhoInPrevTL, tl + 2);  
-
-        kernel<<<gridSize, blockSize>>>(prev_result, d_result, tl + 1);
-        kernel<<<gridSize, blockSize>>>(d_result, prev_result, tl + 2);         
+    {
+        kernel<<<gridSize, blockSize>>>(prev_result, result, tl + 1);
+        kernel<<<gridSize, blockSize>>>(result, prev_result, tl + 2);         
         tl += 2;            
-    }   
-    kernel<<<gridSize, blockSize>>>(prev_result, d_result, 1);
-    cudaMemcpy(p->result, d_result, size, cudaMemcpyDeviceToHost);
+    }  
+cudaMemcpy(p->result, prev_result, size, cudaMemcpyDeviceToHost);
+    */
+    kernel<<<gridSize, blockSize>>>(prev_result, result, 1);
+    cudaMemcpy(p->result, result, size, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);
-    cudaFree(d_result);
+    cudaFree(result);
     cudaFree(prev_result);
     cudaDeviceReset();
     delete[] rhoInPrevTL_asV;

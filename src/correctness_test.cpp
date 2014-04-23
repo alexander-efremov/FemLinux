@@ -368,11 +368,13 @@ TEST_F(gputest, main_test)
 		std::cout << "level = " << level << std::endl;
 		ComputeParameters* p = new ComputeParameters(level, true);
 	    ASSERT_TRUE(p->result != NULL);
+	    ASSERT_TRUE(p->t_count == 50);
 		float gpu_time = solve_at_gpu(p);
         ASSERT_TRUE(gpu_time != -1);
         double* data = _modelDataProvider.GetModelData(level);
+        printf("%s\n", "cpu");
         print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
-        printf("%s\n", "");
+        printf("%s\n", "gpu");
         print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
         printf("%s\n", "Start testing...");
 		for (int i = 0; i < p->get_real_matrix_size(); i++)

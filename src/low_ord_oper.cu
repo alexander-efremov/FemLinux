@@ -46,31 +46,6 @@ __device__ double d_analytSolut(double t, double x, double y )
     return 1.1  +  sin( t * x * y);
 }
 
-double d_initDataOfSol(ComputeParameters* p, int i, int j)
-{
-    return 
-		1.1  +  sin( 0.* p->x[ i ] * p->y[ j ]);
-}
-
-double d_initDataOfSol(ComputeParameters p, int i, int j)
-{
-    return 
-		1.1  +  sin( 0.* p.x[ i ] * p.y[ j ]);
-}
-
-double h_u_function_cuda(double par_b, double t, double x,
-										double y) {
-											return par_b * y * (1. - y) * (C_pi_device / 2. + atan(-x));
-}
-
-double h_v_function_cuda(double lbDom, double rbDom,
-										double bbDom, double ubDom, double t, double x, double y) {
-											return atan(
-												(x - lbDom) * (x - rbDom) * (1. + t) / 10. * (y - ubDom)
-												* (y - bbDom));
-}
-
-
 __device__ double d_itemOfInteg_2SpecType(
     double Py,
     double Qy,
@@ -1863,10 +1838,6 @@ __device__ double d_integUnderUnunifTr(
     return integ;
 }
 
-
-
-
-
 __device__ double d_f_function(const int i, const int j)
 {
     
@@ -1889,271 +1860,78 @@ __device__ double d_f_function(const int i, const int j)
     return dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
 }
 
-
-double h_f_function(ComputeParameters p, const int currentTimeLevel, const int i, const int j)
+__device__ double* init_x_y(int size) // залепуха, удалить
 {
-    double t  =  p.tau * currentTimeLevel;
-    double x  =  p.x[ i ];
-    double y  =  p.y[ j ];
-
-    double arg_v  =  (x - p.lb) * (x - p.rb) * (1.+t) /10. * (y - p.ub) * (y - p.bb);
-    double rho, dRhoDT, dRhoDX, dRhoDY;
-    double u, duDX;
-    double v, dvDY;
-    rho  =  h_analytSolut(t, x, y );
-    dRhoDT  =  x * y * cos( t*x*y );
-    dRhoDX  =  t * y * cos( t*x*y );
-    dRhoDY  =  t * x * cos( t*x*y );
-    u  =  h_u_function_cuda(p.b, t, x, y );
-    duDX  = -p.b * y * (1.-y)  /  ( 1.  +  x * x );
-    v  =  h_v_function_cuda(p.lb, p.rb, p.bb, p.ub, t, x, y );
-    dvDY  =  (x - p.lb) * (x - p.rb) * (1.+t) /10. * (y - p.bb + y - p.ub);
-    dvDY  =  dvDY  /  ( 1.  +  arg_v * arg_v );
-    return dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
-}
-
-double h_f_function(ComputeParameters* p, const int currentTimeLevel, const int i, const int j)
-{
-    double t  =  p->tau * currentTimeLevel;
-    double x  =  p->x[ i ];
-    double y  =  p->y[ j ];
-
-    double arg_v  =  (x - p->lb) * (x - p->rb) * (1.+t) /10. * (y - p->ub) * (y - p->bb);
-    double rho, dRhoDT, dRhoDX, dRhoDY;
-    double u, duDX;
-    double v, dvDY;
-    rho  =  h_analytSolut(t, x, y );
-    dRhoDT  =  x * y * cos( t*x*y );
-    dRhoDX  =  t * y * cos( t*x*y );
-    dRhoDY  =  t * x * cos( t*x*y );
-    u  =  h_u_function_cuda(p->b, t, x, y );
-    duDX  = -p->b * y * (1.-y)  /  ( 1.  +  x * x );
-    v  =  h_v_function_cuda(p->lb, p->rb, p->bb, p->ub, t, x, y );
-    dvDY  =  (x - p->lb) * (x - p->rb) * (1.+t) /10. * (y - p->bb + y - p->ub);
-    dvDY  =  dvDY  /  ( 1.  +  arg_v * arg_v );
-    return dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
-}
-
-double d_normOfMatrAtL1_asV(
-    const double *masOX,                          //   -  Massive of OX grid nodes. Dimension = dimOX.
-    int dimOX,
-    //
-    const double *masOY,                          //   -  Massive of OY grid nodes. Dimension = dimOY.
-    int dimOY,
-    //
-    double * mat_asV )
-{
-    double norm = 0.;
-    double hx  =  masOX[1]  -  masOX[0];
-    double hy  =  masOY[1]  -  masOY[0];
-
-    for( int k=1; k< dimOY -1; k++ ) {
-        for( int j=1; j< dimOX -1; j++ ) {
-            norm  +=  fabs( mat_asV[ dimOX*k + j ] );
-        }
+    double *x;
+   
+    x = new double [ size + 1 ];
+    
+    for( int k = 0; k <= size; k++ ) {
+        x[k] = k*c_h;
     }
-    return hx * hy * norm;
+    return x;
 }
 
-__global__ void kernel1(ComputeParameters p, double *rhoInPrevTL_asV, double* result, int length, int x_length, int part_number, int chunk)
+__device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, int i, int j)
 {
-//	const int offset = hemiGetElementOffset();
-//	const int stride = hemiGetElementStride();
-//
-//	for (int opt = offset; opt < length; opt += stride) {
-//		p.i = (opt % x_length + 1) ;
-//		p.j = (opt / x_length + 1) + (int) (part_number*chunk / x_length);
-//#ifdef PRINT_VALUES
-//		printf("p.i = %d p.j = %d \n", p.i, p.j);
-//#endif
-//		 double buf_D = d_integUnderUnunifTr(
-//                       p.a, p.b,
-//                       //
-//                       p.lb, p.rb,
-//                       //
-//                       p.bb, p.ub,
-//                       //
-//                       p.tau, p.currentTimeLevel,
-//                       //
-//					   first[opt].first, first[opt].second, first[opt].third,
-//                       //
-//                       p.x, p.x_size,
-//                       //
-//                       p.y, p.y_size,
-//                       rhoInPrevTL_asV,
-//                       p.i, p.j);
-//
-//
-//     buf_D += d_integUnderUnunifTr(
-//               p.a, p.b,                           //   -  Analitycal solution parameters.
-//               //
-//               p.lb, p.rb,                           //   -  Left and right boundaries of rectangular domain.
-//               //
-//               p.bb, p.ub,                           //   -  Botton and upper boundaries of rectangular domain.
-//               //
-//               p.tau, p.currentTimeLevel,                           //   -  Index of current time layer.
-//               //
-//			   second[opt].first, second[opt].second, second[opt].third,           //   -  Vertices of first triangle.
-//               //
-//               p.x, p.x_size,                       //   -  Number of OX steps.
-//               //
-//               p.y, p.y_size,                       //   -  Number of OY steps.
-//               //
-//               rhoInPrevTL_asV,
-//               p.i, p.j );
-//	 result[opt] = buf_D;
-	//}
-}
+    double first1[2]; double second1[2]; double third1[2];
+    double first2[2]; double second2[2]; double third2[2];
+    // get_square_coord
+    double x, y;
 
-//#define PRINT_VALUES
+    // A
+
+    x = (c_h*(i - 1) + c_h*i) / 2.;
+    y = (c_h*(j - 1) + c_h*j) / 2.;
+    first1[0] = first2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+    first1[1] = first2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+
+    // B
+    x = (c_h*(i + 1) + c_h*i) / 2.;
+    second1[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+    second1[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+
+    // C
+    y = (c_h*(j + 1) + c_h*j) / 2.;
+    third1[0] = third2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+    third1[1] = third2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+
+    // D 
+    x = (c_h*(i - 1) + c_h*i) / 2.;
+    second2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
+    second2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+
+   /* double* ax = init_x_y(10); //залепуха удалить
+    double* ay = init_x_y(10);
+
+    double buf_D = d_integUnderUnunifTr(
+                   c_a, c_b,
+                   c_lb, c_rb,
+                   c_bb, c_ub,
+                   c_tau, current_tl,
+                   first1, second1, third1,
+                   ax, 1, //c_x_size,
+                   ay, 1, //c_y_size,
+                   prev_result,
+                   i, j);
 
 
-
-double d_spaceVolumeInPrevTL(ComputeParameters p, double *rhoInPrevTL_asV )
-{
-	
-   /* Triangle firstT = Triangle();
-    Triangle secondT = Triangle();*/
-	return 0;
-  //  if( h_quadrAngleType(p, firstT, secondT ) != 1 )	{
-		//// TODO: write exception
-  //      return -1.;
-  //  }
-
-    //double buf_D = d_integUnderUnunifTr(
-    //                   p.a, p.b,
-    //                   //
-    //                   p.lb, p.rb,
-    //                   //
-    //                   p.bb, p.ub,
-    //                   //
-    //                   p.tau, p.currentTimeLevel,
-    //                   //
-    //                   firstT.first, firstT.second, firstT.third,
-    //                   //
-    //                   p.x, p.x_size,
-    //                   //
-    //                   p.y, p.y_size,
-    //                   rhoInPrevTL_asV,
-    //                   p.i, p.j);
-
-
-    //return buf_D + d_integUnderUnunifTr(
-               //p.a, p.b,                           //   -  Analitycal solution parameters.
-               ////
-               //p.lb, p.rb,                           //   -  Left and right boundaries of rectangular domain.
-               ////
-               //p.bb, p.ub,                           //   -  Botton and upper boundaries of rectangular domain.
-               ////
-               //p.tau, p.currentTimeLevel,                           //   -  Index of current time layer.
-               ////
-               //secondT.first, secondT.second, secondT.third,           //   -  Vertices of first triangle.
-               ////
-               //p.x, p.x_size,                       //   -  Number of OX steps.
-               ////
-               //p.y, p.y_size,                       //   -  Number of OY steps.
-               ////
-               //rhoInPrevTL_asV,
-               //p.i, p.j );
+    return buf_D + d_integUnderUnunifTr(
+           c_a, c_b,
+           c_lb, c_rb,                            
+           c_bb, c_ub,                              
+           c_tau, current_tl,       
+           first2, second2, third2,  
+           ax, 1, // c_x_size,                        
+           ay, 1, //c_y_size,                          
+           prev_result,
+           i, j );*/
+           return 0;
 }
 
 
-double d_solByEqualVolumes(ComputeParameters p)
-{
-    double *rhoInPrevTL_asV;
-    double spVolInPrevTL;
 
-    rhoInPrevTL_asV = new double [ p.size ];
-    //   Initial data of rho.
-    for( int k = 0; k <= p.x_size; k++ ) {
-        for( int j = 0; j <= p.y_size; j++ ) {
-            rhoInPrevTL_asV[ (p.x_size+1)*k + j ]  =  d_initDataOfSol(p, j, k);
-        }
-    }
-
-    for( int currentTimeLevel = 1; currentTimeLevel <= p.t_count; currentTimeLevel++ ) {
-
-        std::cout<<"\r \t \t \t \t \t \t \t \t \r";
-        std::cout << " Nx = " <<  p.x_size;
-        std::cout << ", indexOfCurrTL = " << currentTimeLevel << " ( " << p.t_count << " ) " << std::flush;
-
-       
-        //  Compute boundaries
-        for(int i = 0; i  <= p.x_size; ++i) {
-            p.i = i;
-            p.result[ i  ]  =   h_bottomBound(p);
-            p.result[ (p.x_size + 1)*p.y_size + i  ]  =   h_upperBound(p);
-        }
-        for( int j = 0; j <= p.y_size; ++j) {
-            p.j = j;
-            p.result[ (p.x_size + 1)*j ]  =  h_leftBound(p);
-            p.result[ (p.x_size + 1)*j  +  p.x_size ]  =  h_rightBound(p);
-        }
-
-		
-        for( int j = 1; j < p.y_size; j++ ) {
-            for( int i = 1; i < p.x_size; i++ ) {
-
-                p.currentTimeLevel = currentTimeLevel;
-                p.i = i;
-                p.j = j;
-
-                spVolInPrevTL  =  d_spaceVolumeInPrevTL(p, rhoInPrevTL_asV );
-
-                double buf_D  =  (p.x[i + 1]  -  p.x[i - 1]) /2.;
-                spVolInPrevTL  =  spVolInPrevTL / buf_D;
-
-                buf_D  =  (p.y[j + 1]  -  p.y[j - 1]) /2.;
-                spVolInPrevTL  =  spVolInPrevTL / buf_D;
-
-                p.result[ (p.x_size + 1)*j + i ]  =  spVolInPrevTL;
-                p.result[ (p.x_size + 1)*j + i ] +=  p.tau * h_f_function(p, currentTimeLevel, i, j);
-            }
-        }
-
-        for( int i = 0; i < p.size; i++ ) {
-            rhoInPrevTL_asV[ i ]  =  p.result[ i ];
-        }
-    }
-
-    delete[] rhoInPrevTL_asV;
-    std::cout << std::endl;
-    return 1;
-}
-
-__device__ double space_volume_in_prev_tl(int i, int j)
-{
-        double first1[2]; double second1[2]; double third1[2];
-        double first2[2]; double second2[2]; double third2[2];
-        // get_square_coord
-        double x, y;
-
-        // A
-
-        x = (c_h*(i - 1) + c_h*i) / 2.;
-        y = (c_h*(j - 1) + c_h*j) / 2.;
-        first1[0] = first2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-        first1[1] = first2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
-
-        // B
-        x = (c_h*(i + 1) + c_h*i) / 2.;
-        second1[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-        second1[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
-
-        // C
-        y = (c_h*(j + 1) + c_h*j) / 2.;
-        third1[0] = third2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-        third1[1] = third2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
-
-        // D 
-        x = (c_h*(i - 1) + c_h*i) / 2.;
-        second2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-        second2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
-
-        return 1;
-}
-
-__global__ void kernel(double* prev_result, double* result)
+__global__ void kernel(double* prev_result, double* result, int current_tl)
 {
     for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
     {
@@ -2180,12 +1958,12 @@ __global__ void kernel(double* prev_result, double* result)
         
         if (i > 0 && j > 0 && j != c_y_st_number - 1 && i != c_x_st_number - 1)
         {
-            /*
-            result [opt] = -1;
+            
+           // result [opt] = -1;
             int i = opt % c_x_length + 1;
             int j = opt / c_x_length + 1;
 
-            double sp =  space_volume_in_prev_tl(i,j);
+            double sp =  space_volume_in_prev_tl(prev_result, current_tl, i, j);
 
             double buf_D  =  (c_h*(i + 1)  -  c_h*(i - 1)) /2.;
             sp /= buf_D;
@@ -2195,7 +1973,8 @@ __global__ void kernel(double* prev_result, double* result)
 
             result[ opt ]  =  sp;
             result[ opt ] +=  c_tau * d_f_function(i,j);
-            */
+            result [opt] = 0;
+            
         }
     }
 }
@@ -2208,11 +1987,12 @@ double* init_rho(ComputeParameters *p)
     //   Initial data of rho.
     for( int k = 0; k <= p->x_size; k++ ) {
         for( int j = 0; j <= p->y_size; j++ ) {
-            rhoInPrevTL_asV[ (p->x_size+1)*k + j ]  =  d_initDataOfSol(p, j, k);
+            rhoInPrevTL_asV[ (p->x_size+1)*k + j ]  =  1.1  +  sin( 0.* p->x[ k ] * p->y[ j ]);
         }
     }
     return rhoInPrevTL_asV;
 }
+
 
 float solve_at_gpu(ComputeParameters *p)
 {
@@ -2267,7 +2047,7 @@ float solve_at_gpu(ComputeParameters *p)
     cudaMemcpy(prev_result, rhoInPrevTL_asV, size, cudaMemcpyHostToDevice);
     
     cudaEventRecord(start, 0);
-    kernel<<<gridSize, blockSize>>>(prev_result, d_result);
+    kernel<<<gridSize, blockSize>>>(prev_result, d_result, 1);
     cudaMemcpy(p->result, d_result, size, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);

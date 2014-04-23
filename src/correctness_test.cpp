@@ -85,7 +85,6 @@ protected:
 							  printf("%.8f ", a[k]);
 							  break;
 					}
-					printf("%f ", a[k]);
 				}
 				printf("\n");
 			}
@@ -245,7 +244,7 @@ protected:
 
 TEST_F(gputest, get_quad_coord)
 {
-	const int finishLevel = 10;
+	const int finishLevel = 1;
 	const int startLevel = 0;
 	const double error = 1.0e-15;
 
@@ -364,8 +363,8 @@ TEST_F(gputest, get_quad_coord_te)
 	double time_cpu (-1), time_gpu(0);
 	double firVfirT[2], secVfirT[2], thiVfirT[2]; 
 	double firVsecT[2], secVsecT[2], thiVsecT[2]; 
-	int finish_level = 10;
-	int start_level = 8;
+	int finish_level = 1;
+	int start_level = 0;
 
 
 	for (int level = start_level; level < finish_level; level++)
@@ -487,6 +486,10 @@ TEST_F(gputest, main_test_1tl_inner)
 	float gpu_time = solve_at_gpu(p);
     ASSERT_TRUE(gpu_time != -1);
     double* data = _modelDataProvider.GetModelData1tl(0);
+    printf("%d\n", p->get_real_x_size());
+    print_matrix(p->get_real_x_size(), p->get_real_y_size(), data, 5);
+    printf("%s\n", "");
+    print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result, 5);
     printf("%s\n", "Start testing...");
 	for (int i = 0; i < p->get_real_matrix_size(); i++)
 	{
@@ -542,41 +545,6 @@ TEST_F(CpuVersusGpuFunctionalFemTest, AnalyticSolutionNotEqualsTest)
 	double cpu = analytSolut(p->a, p->lb, p->rb, p->bb, p->ub, p->tau, p->x[1],
 		p->y[2]);
 	double gpu = h_analytSolut(p->tau, p->x[1], p->y[1]);
-	ASSERT_NE(cpu, gpu);
-	delete p;
-}
-
-TEST_F(CpuVersusGpuFunctionalFemTest, DataInitializationAnalyticSolutionEqualsTest)
-{
-	ComputeParameters* p = new ComputeParameters(0, false);
-	double cpu = initDataOfSol(p->a, p->lb, p->rb, p->bb, p->ub, 1, p->x, 2, p->y);
-	double gpu = d_initDataOfSol(p, 1, 2);
-	ASSERT_EQ(cpu, gpu);
-	delete p;
-}
-
-TEST_F(CpuVersusGpuFunctionalFemTest, F_Function_EqualsTest)
-{
-	ComputeParameters* p = new ComputeParameters(0, false);
-	int currentTimeLevel = 1;
-	int i = 1;
-	int j = 1;
-	double cpu = f_function(p->a, p->b, p->lb, p->rb, p->bb, p->ub, p->tau,
-		currentTimeLevel, i, p->x, p->x_size, j, p->y, p->y_size);
-	double gpu = h_f_function(p, currentTimeLevel, i, j);
-	ASSERT_EQ(cpu, gpu);
-	delete p;
-}
-
-TEST_F(CpuVersusGpuFunctionalFemTest, F_Function_NotEqualsTest)
-{
-	ComputeParameters* p = new ComputeParameters(0, false);
-	int currentTimeLevel = 1;
-	int i = 1;
-	int j = 1;
-	double cpu = f_function(p->a, p->b, p->lb, p->rb, p->bb, p->ub, p->tau,
-		currentTimeLevel, i, p->x, p->x_size, j + 2, p->y, p->y_size);
-	double gpu = h_f_function(p, currentTimeLevel, i + 1, j);
 	ASSERT_NE(cpu, gpu);
 	delete p;
 }

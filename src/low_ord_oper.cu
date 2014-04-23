@@ -13,7 +13,7 @@ __device__ double d_u_function(double par_b, double t, double x,
 											return par_b * y * (1. - y) * (C_pi_device / 2. + atan(-x));
 }
 
- __device__ double d_v_function(double lbDom, double rbDom,
+__device__ double d_v_function(double lbDom, double rbDom,
 										double bbDom, double ubDom, double t, double x, double y) {
 											return atan(
 												(x - lbDom) * (x - rbDom) * (1. + t) / 10. * (y - ubDom)
@@ -34,11 +34,6 @@ __device__ double d_itemOfInteg_1SpecType(
     integ = (Hx - a)*(Hx - a)  -  (Gx - a)*(Gx - a);
     integ = integ * (  (Qy - b)*(Qy - b)  -  (Py - b)*(Py - b)  );
     return integ / 4.;
-}
-
-double h_analytSolut(double t, double x, double y )
-{
-    return 1.1  +  sin( t * x * y);
 }
 
 __device__ double d_analytSolut(double t, double x, double y )
@@ -547,46 +542,6 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
     return integ;
 }
 
-
-double h_bottomBound(ComputeParameters& p)
-{
-    return h_analytSolut(p.tau*p.currentTimeLevel, p.x[p.i], p.bb );
-}
-
-double h_bottomBound(ComputeParameters* p)
-{
-    return h_analytSolut(p->tau*p->currentTimeLevel, p->x[p->i], p->bb );
-}
-
-double h_upperBound(ComputeParameters& p)
-{
-    return  h_analytSolut(p.tau*p.currentTimeLevel, p.x[p.i],  p.ub );
-}
-double h_upperBound(ComputeParameters* p)
-{
-    return  h_analytSolut(p->tau*p->currentTimeLevel, p->x[p->i],  p->ub );
-}
-
-double h_rightBound(ComputeParameters& p)
-{
-    return h_analytSolut(p.tau*p.currentTimeLevel, p.rb, p.y[p.j] );
-}
-
-double h_rightBound(ComputeParameters* p)
-{
-    return h_analytSolut(p->tau*p->currentTimeLevel, p->rb, p->y[p->j] );
-}
-
-double h_leftBound(ComputeParameters& p)
-{
-    return h_analytSolut(p.tau*p.currentTimeLevel, p.lb, p.y[p.j]);
-}
-
-double h_leftBound(ComputeParameters* p)
-{
-    return h_analytSolut(p->tau*p->currentTimeLevel, p->lb, p->y[p->j]);
-}
-
 __device__ double d_integOfChan_SLLeftSd(                          //   -  The domain is Channel with Slant Line on the left side.
     double par_a,                           //   -  Solution parameter.
     //
@@ -616,9 +571,6 @@ __device__ double d_integOfChan_SLLeftSd(                          //   -  The d
     //
     double * rhoInPrevTL_asV )
 {
-
-
-
     double lv[2], mv[2];                                  //   -  Left and middle vertices.
     int wMvI;                                             //   -  Where middle vertex is.
     int indCurSqOxToCh[2];                                //   -  Indices of current square by Ox axis to be changed. Under which we want to integrate.

@@ -1790,26 +1790,41 @@ __device__ double d_integUnderUnunifTr(
     return integ;
 }
 
-__device__ double d_f_function(const int i, const int j)
-{
-    
+__device__ double d_f_function(const int current_tl, const int i, const int j)
+{ 
+//    printf("\ngpu f function \n");
+//    printf("gpu t = %f\n", c_tau*current_tl);
     double x  =  c_h * i ;
+ //   printf("gpu x = %f\n", x);
     double y  =  c_h * j ;
+  //  printf("gpu y = %f\n", y);
 
-    double arg_v  =  (x - c_lb) * (x - c_rb) * (1.+c_tau_to_current_time_level) /10. * (y - c_ub) * (y - c_bb);
+    double arg_v  =  (x - c_lb) * (x - c_rb) * (1.+c_tau*current_tl) /10. * (y - c_ub) * (y - c_bb);
+ //   printf("gpu arg_v = %f\n", arg_v);
     double rho, dRhoDT, dRhoDX, dRhoDY;
     double u, duDX;
     double v, dvDY;
-    rho  =  d_analytSolut(c_tau_to_current_time_level, x, y );
-    dRhoDT  =  x * y * cos( c_tau_to_current_time_level*x*y );
-    dRhoDX  =  c_tau_to_current_time_level * y * cos( c_tau_to_current_time_level*x*y );
-    dRhoDY  =  c_tau_to_current_time_level * x * cos( c_tau_to_current_time_level*x*y );
-    u  =  d_u_function(c_b, c_tau_to_current_time_level, x, y );
+    rho  =  d_analytSolut(c_tau*current_tl, x, y );
+  //  printf("gpu rho = %f\n", rho);
+    dRhoDT  =  x * y * cos( c_tau*current_tl*x*y );
+   // printf("gpu dRhoDT = %f\n", dRhoDT);
+    dRhoDX  =  c_tau*current_tl * y * cos( c_tau*current_tl*x*y );
+  //  printf("gpu dRhoDX = %f\n", dRhoDX);
+    dRhoDY  =  c_tau*current_tl * x * cos( c_tau*current_tl*x*y );
+  //  printf("gpu dRhoDY = %f\n", dRhoDY);
+    u  =  d_u_function(c_b, c_tau*current_tl, x, y );
+  //  printf("gpu u = %f\n", u);
     duDX  = -c_b * y * (1.-y)  /  ( 1.  +  x * x );
-    v  =  d_v_function(c_lb, c_rb, c_bb, c_ub, c_tau_to_current_time_level, x, y );
-    dvDY  =  (x - c_lb) * (x - c_rb) * (1.+c_tau_to_current_time_level) /10. * (y - c_bb + y - c_ub);
+  //  printf("gpu duDX = %f\n", duDX);
+    v  =  d_v_function(c_lb, c_rb, c_bb, c_ub, c_tau*current_tl, x, y );
+  //  printf("gpu v = %f\n", v);
+    dvDY  =  (x - c_lb) * (x - c_rb) * (1.+c_tau*current_tl) /10. * (y - c_bb + y - c_ub);
+   // printf("gpu dvDY 1 = %f\n", dvDY);
     dvDY  =  dvDY  /  ( 1.  +  arg_v * arg_v );
-    return dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
+  //  printf("gpu dvDY 2 = %f\n", dvDY);
+    double res = dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
+ //   printf("gpu res = %f\n", res);
+    return res;
 }
 
 __device__ double* init_x_y(int size) // залепуха, удалить
@@ -1853,7 +1868,7 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
     second2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
     second2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
 
-   /* double* ax = init_x_y(10); //залепуха удалить
+    double* ax = init_x_y(10); //залепуха удалить
     double* ay = init_x_y(10);
 
     double buf_D = d_integUnderUnunifTr(
@@ -1862,8 +1877,8 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
                    c_bb, c_ub,
                    c_tau, current_tl,
                    first1, second1, third1,
-                   ax, 1, //c_x_size,
-                   ay, 1, //c_y_size,
+                   ax, 10, //c_x_size,
+                   ay, 10, //c_y_size,
                    prev_result,
                    i, j);
 
@@ -1874,11 +1889,11 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
            c_bb, c_ub,                              
            c_tau, current_tl,       
            first2, second2, third2,  
-           ax, 1, // c_x_size,                        
-           ay, 1, //c_y_size,                          
+           ax, 10, // c_x_size,                        
+           ay, 10, //c_y_size,                          
            prev_result,
-           i, j );*/
-           return 0;
+           i, j );
+          // return 0;
 }
 
 
@@ -1907,26 +1922,25 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
         { 
             result[ opt ] = 1.1  +  sin(  c_tau_to_current_time_level_to_h * j * c_rb );
         }
-        
         if (i > 0 && j > 0 && j != c_y_st_number - 1 && i != c_x_st_number - 1)
         {
-            
-           // result [opt] = -1;
-            int i = opt % c_x_length + 1;
-            int j = opt / c_x_length + 1;
-
             double sp =  space_volume_in_prev_tl(prev_result, current_tl, i, j);
-
+      //      printf("\ngpu sp = %f\n", sp);
             double buf_D  =  (c_h*(i + 1)  -  c_h*(i - 1)) /2.;
+     //       printf("gpu buf_D x = %f\n", buf_D);
             sp /= buf_D;
-
+     //       printf("gpu sp /= buf_D y = %f\n", sp);
             buf_D  =  (c_h*(j + 1)  -  c_h*(j - 1)) /2.;
-            sp /= buf_D;                         
-
+      //      printf("gpu buf_D x = %f\n", buf_D);
+            sp /= buf_D;                     
+      //      printf("gpu sp /= buf_D y = %f\n", sp); 
             result[ opt ]  =  sp;
-            result[ opt ] +=  c_tau * d_f_function(i,j);
-            result [opt] = 0;
-            
+     //       printf("gpu tau = %f\n", c_tau);
+            double f = d_f_function(current_tl, i,j);
+     //       printf("gpu c_tau %f\n", c_tau);
+      //      printf("gpu f = %f\n", f);
+            result[ opt ] +=  c_tau * f;
+       //     return;
         }
     }
 }

@@ -2064,23 +2064,39 @@ double f_function( //   -  It's item of right part of differential equation.
 	const double *masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
 	int numOfOYSt ) //   -  Number of OY steps (segments).
 {
+	//printf("\ncpu f function \n");
 	double t = tau * iCurrTL;
+	//printf("cpu t = %f\n", t);
 	double x = masOX[ iOfOXN ];
+	//printf("cpu x = %f\n", x);
 	double y = masOY[ iOfOYN ];
+	//printf("cpu y = %f\n", y);
 	double arg_v = (x - lbDom) * (x - rbDom) * (1.+t) /10. * (y - ubDom) * (y - bbDom);
+	//printf("cpu arg_v = %f\n", arg_v);
 	double rho, dRhoDT, dRhoDX, dRhoDY;
 	double u, duDX;
 	double v, dvDY;
 	rho = analytSolut(par_a, lbDom, rbDom, bbDom, ubDom, t, x, y );
+//	printf("cpu rho = %f\n", rho);
 	dRhoDT = x * y * cos( t*x*y );
+//	printf("cpu dRhoDT = %f\n", dRhoDT);
 	dRhoDX = t * y * cos( t*x*y );
+//	printf("cpu dRhoDX = %f\n", dRhoDX);
 	dRhoDY = t * x * cos( t*x*y );
+//	printf("cpu dRhoDY = %f\n", dRhoDY);
 	u = u_function(par_b, t, x, y );
+//	printf("cpu u = %f\n", u);
 	duDX = -par_b * y * (1.-y) / ( 1. + x * x );
+//	printf("cpu duDX = %f\n", duDX);
 	v = v_function(lbDom, rbDom, bbDom, ubDom, t, x, y );
+//	printf("cpu v = %f\n", v);
 	dvDY = (x - lbDom) * (x - rbDom) * (1.+t) /10. * (y - bbDom + y - ubDom);
+//	printf("cpu dvDY 1 = %f\n", dvDY);
 	dvDY = dvDY / ( 1. + arg_v * arg_v );
-	return dRhoDT + rho * duDX + u * dRhoDX + rho * dvDY + v * dRhoDY;
+//	printf("cpu dvDY 2 = %f\n", dvDY);
+    double res = dRhoDT + rho * duDX + u * dRhoDX + rho * dvDY + v * dRhoDY;
+//	printf("cpu res = %f\n", res);
+	return res;
 }
 
 int quadrAngleType(
@@ -2695,7 +2711,7 @@ double solByEqualVolumes(
 		}
 	}
 
-	bool canPrint = true;
+	bool canPrint = false;
 	if (canPrint)
 	{
 		cout<<"\r \t \t \t \t \t \t \t \t \r";
@@ -2748,12 +2764,16 @@ double solByEqualVolumes(
 					//
 					iOfOYN, masOY, numOfOYSt, //   -  OY data.
 					rhoInPrevTL_asV );
-
+		//	    printf("\ncpu sp = %f\n", spVolInPrevTL);
+			    
 				buf_D = (masOX[iOfOXN +1] - masOX[iOfOXN -1]) /2.;
+			//	printf("cpu buf_D x = %f\n", buf_D);
 				spVolInPrevTL = spVolInPrevTL / buf_D;
-
+		//		printf("cpu spVolInPrevTL / buf_D = %f\n", spVolInPrevTL);
 				buf_D = (masOY[iOfOYN +1] - masOY[iOfOYN -1]) /2.;
+			//	printf("cpu buf_D y = %f\n", buf_D);
 				spVolInPrevTL = spVolInPrevTL / buf_D;
+			//	printf("cpu spVolInPrevTL / buf_D = %f\n", spVolInPrevTL);
 
 				RPInCurrTL = f_function(par_a, par_b, lbDom, rbDom, bbDom, ubDom, tau, iCurrTL, iOfOXN,
 				                        masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
@@ -2762,6 +2782,9 @@ double solByEqualVolumes(
 				                        iOfOYN, //   -  Index of current OY node.
 				                        masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
 				                        numOfOYSt ); //   -  Number of OY steps.
+			//	printf("cpu tau %f\n", tau);
+			//	printf("cpu f = %f\n", RPInCurrTL);
+			//	goto ex;
 
 				rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] = spVolInPrevTL;
 				rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] += tau * RPInCurrTL;
@@ -2772,7 +2795,7 @@ double solByEqualVolumes(
 			rhoInPrevTL_asV[ iOfThr ] = rhoInCurrTL_asV[ iOfThr ];
 	}
 
-
+//ex:
 	delete[] rhoInPrevTL_asV;
 
 	return 0;

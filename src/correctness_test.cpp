@@ -357,9 +357,7 @@ TEST_F(gputest, get_quad_coord_te)
 	}
 }
 
-
-
-/*TEST_F(gputest, DISABLED_main_test)
+TEST_F(gputest, main_test)
 {
 	const int finishLevel = 1;
 	const int startLevel = 0;
@@ -384,7 +382,7 @@ TEST_F(gputest, get_quad_coord_te)
 
 		delete p;
 	}
-}*/
+}
 
 TEST_F(gputest, main_test_1tl_boundaries)
 {
@@ -428,7 +426,7 @@ TEST_F(gputest, main_test_1tl_inner)
     ASSERT_TRUE(gpu_time != -1);
     double* data = _modelDataProvider.GetModelData1tl(0);
     //double* data = GetCpuToLevel(0);
-     printf("%s\n", "cpu");
+    printf("%s\n", "cpu");
     print_matrix(p->get_real_x_size(), p->get_real_y_size(), data, 5);
     printf("%s\n", "gpu");
     print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result, 5);

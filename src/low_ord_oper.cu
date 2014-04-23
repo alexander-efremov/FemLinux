@@ -6,40 +6,7 @@
 #include "math.h"
 #include "hemi.h"
 #include "common.h"
-
-__constant__ double c_tau;
-__constant__ double c_h;
-__constant__ double c_a;
-__constant__ double c_b;
-__constant__ double c_tau_to_current_time_level;
-__constant__ double c_tau_to_current_time_level_to_h; // currentTimeLevel *  tau * h ( h = 1. / (p->x_size)) ;
-__constant__ double c_lb;
-__constant__ double c_rb;
-__constant__ double c_ub;
-__constant__ double c_bb;
-__constant__ double c_tau_b;
-__constant__ double c_pi_half;
-__constant__ int c_x_length;
-__constant__ int c_n;
-__constant__ int c_x_st_number;
-__constant__ int c_y_st_number;
-
-double u_function_cuda(double par_b, double t, double x, double y)
-{
-    return  par_b * y * (1.-y) * (  C_pi_device /2. + atan( -x )  );
-}
-
-double v_function_cuda(
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double t, double x, double y )
-{
-    return	atan((x - lbDom) * (x - rbDom) * (1.+t) /10. * (y - ubDom) * (y - bbDom));
-}
+#include "cuda_constant.cuh"
 
 __device__ double d_u_function(double par_b, double t, double x,
 										double y) {
@@ -1967,107 +1934,6 @@ double h_f_function(ComputeParameters* p, const int currentTimeLevel, const int 
     return dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
 }
 
-void h_quadrAngleType(ComputeParameters* p, double* first_x1, double* second_x1, double* third_x1, double* first_x2, double*
-	second_x2, double* third_x2,
-	double* first_y1, double* second_y1, double* third_y1, double* first_y2, double* second_y2, double* third_y2)
-{
-   
-
-    double alpha[2], betta[2], gamma[2], theta[2];        //   -  Vertexes of square. Anticlockwise order from left botton vertex.
-    double u, v;                                          //   -  Items of velocity components.
-    double alNew[2], beNew[2], gaNew[2], thNew[2];        //   -  New positions of vertexes. Vertexes of quadrangle.
-   
-
-    //   1. First of all let's compute coordinates of square vertexes.
-
-    //  OX:
-
-    if( p->i == 0 ) {
-        alpha[0]  =  p->x[ p->i ];
-        betta[0]  =  ( p->x[p->i]  +  p->x[p->i +1] ) /2.;
-        gamma[0]  =  ( p->x[p->i]  +  p->x[p->i +1] ) /2.;
-        theta[0]  =  p->x[ p->i ];
-    }
-
-    if( p->i == p->x_size ) {
-        alpha[0]  =  ( p->x[p->i -1]  +  p->x[p->i] ) /2.;
-        betta[0]  =  p->x[ p->i ];
-        gamma[0]  =  p->x[ p->i ];
-        theta[0]  =  ( p->x[p->i -1]  +  p->x[p->i] ) /2.;
-    }
-
-    if( (p->i > 0)  &&  (p->i < p->x_size) ) {
-        alpha[0]  =  ( p->x[p->i -1]  +  p->x[p->i] ) /2.;
-        betta[0]  =  ( p->x[p->i +1]  +  p->x[p->i] ) /2.;
-        gamma[0]  =  ( p->x[p->i +1]  +  p->x[p->i] ) /2.;
-        theta[0]  =  ( p->x[p->i -1]  +  p->x[p->i] ) /2.;
-    }
-
-    //  OY:
-    if( p->j == 0 ) {
-        alpha[1]  =  p->y[ p->j ];
-        betta[1]  =  p->y[ p->j ];
-        gamma[1]  =  ( p->y[p->j]  +  p->y[ p->j +1] ) /2.;
-        theta[1]  =  ( p->y[p->j]  +  p->y[ p->j +1] ) /2.;
-    }
-
-    if( p->j == p->y_size ) {
-        alpha[1]  =  ( p->y[p->j]  +  p->y[ p->j -1] ) /2.;
-        betta[1]  =  ( p->y[p->j]  +  p->y[ p->j -1] ) /2.;
-        gamma[1]  =  p->y[ p->j ];
-        theta[1]  =  p->y[ p->j ];
-    }
-
-    if( (p->j > 0) && (p->j < p->y_size) ) {
-        alpha[1]  =  ( p->y[p->j]  +  p->y[ p->j -1] ) /2.;
-        betta[1]  =  ( p->y[p->j]  +  p->y[ p->j -1] ) /2.;
-        gamma[1]  =  ( p->y[p->j]  +  p->y[ p->j +1] ) /2.;
-        theta[1]  =  ( p->y[p->j]  +  p->y[ p->j +1] ) /2.;
-    }
-
-    //   2. Now let's compute new coordinates on the previous time level of alpha, betta, gamma, theta points.
-    //  alNew.
-
-    u = u_function_cuda( p->b,   p->currentTimeLevel * p->tau, alpha[0], alpha[1] );
-    v = v_function_cuda( p->lb, p->rb,   p->bb, p->ub,   p->currentTimeLevel * p->tau, alpha[0], alpha[1] );
-    alNew[0]  =  alpha[0]  -  p->tau * u;
-    alNew[1]  =  alpha[1]  -  p->tau * v;
-
-    //  beNew.
-    u = u_function_cuda( p->b,   p->currentTimeLevel * p->tau, betta[0], betta[1] );
-    v = v_function_cuda( p->lb, p->rb, p->bb, p->ub, p->currentTimeLevel * p->tau, betta[0], betta[1] );
-    beNew[0]  =  betta[0]  -  p->tau * u;
-    beNew[1]  =  betta[1]  -  p->tau * v;
-
-    //  gaNew.
-
-    u = u_function_cuda( p->b, p->currentTimeLevel * p->tau, gamma[0], gamma[1] );
-    v = v_function_cuda( p->lb, p->rb, p->bb, p->ub, p->currentTimeLevel * p->tau, gamma[0], gamma[1] );
-    gaNew[0]  =  gamma[0]  -  p->tau * u;
-    gaNew[1]  =  gamma[1]  -  p->tau * v;
-
-    //  thNew.
-    u = u_function_cuda( p->b,   p->currentTimeLevel * p->tau, theta[0], theta[1] );
-    v = v_function_cuda( p->lb, p->rb, p->bb, p->ub,   p->currentTimeLevel * p->tau, theta[0], theta[1] );
-    thNew[0]  =  theta[0]  -  p->tau * u;
-    thNew[1]  =  theta[1]  -  p->tau * v;
-
-	*first_x1 = alNew[0];
-	*first_y1 = alNew[1];
-	*second_x1 = beNew[0];
-	*second_y1 = beNew[1];
-	*third_x1 = gaNew[0];
-	*third_y1 = gaNew[1];
-	
-	*first_x2 = alNew[0];
-	*first_y2 = alNew[1];
-	*second_x2 = thNew[0];
-	*second_y2 = thNew[1];
-	*third_x2 = gaNew[0];
-	*third_y2 = gaNew[1];
-    
-}
-
 double d_normOfMatrAtL1_asV(
     const double *masOX,                          //   -  Massive of OX grid nodes. Dimension = dimOX.
     int dimOX,
@@ -2354,7 +2220,7 @@ float solve_at_gpu(ComputeParameters *p)
     assert(p->result != NULL);
  //   const int gridSize = 256;
   //  const int blockSize =  512;
-        const int gridSize = 1;
+    const int gridSize = 1;
     const int blockSize =  1;
     size_t n(0);
     int temp_i(0);

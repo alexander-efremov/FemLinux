@@ -2013,6 +2013,19 @@ float solve_at_gpu(ComputeParameters *p)
     cudaMemcpy(prev_result, rhoInPrevTL_asV, size, cudaMemcpyHostToDevice);
     
     cudaEventRecord(start, 0);
+    int tl = 0; 
+    int tempTl = p->t_count - 1;  
+    while(tl < tempTl)
+    {       
+       // HEMI_KERNEL_LAUNCH(b_kernel, GridDimBound, BlockDimBound, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), tl + 1, dev_rhoInCurrTL);                 
+      //  HEMI_KERNEL_LAUNCH(kernel, GridDim, BlockDim, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), dev_rhoInPrevTL, dev_rhoInCurrTL, tl + 1);                    
+      //  HEMI_KERNEL_LAUNCH(b_kernel, GridDimBound, BlockDimBound, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), tl + 2, dev_rhoInPrevTL);         
+      //  HEMI_KERNEL_LAUNCH(kernel, GridDim, BlockDim, 0, 0, dev_masOX.readOnlyPtr(), dev_masOY.readOnlyPtr(), dev_rhoInCurrTL, dev_rhoInPrevTL, tl + 2);  
+
+        kernel<<<gridSize, blockSize>>>(prev_result, d_result, tl + 1);
+        kernel<<<gridSize, blockSize>>>(d_result, prev_result, tl + 2);         
+        tl += 2;            
+    }   
     kernel<<<gridSize, blockSize>>>(prev_result, d_result, 1);
     cudaMemcpy(p->result, d_result, size, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, 0);

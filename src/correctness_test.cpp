@@ -378,11 +378,11 @@ TEST_F(gputest, main_test)
 		ComputeParameters* p = new ComputeParameters(level, true);
 	    ASSERT_TRUE(p->result != NULL);
 	    ASSERT_TRUE(p->t_count == 50);
-	    p->t_count = 3;
+	   // p->t_count = 3;
 		float gpu_time = solve_at_gpu(p, false);
         ASSERT_TRUE(gpu_time != -1);
-       // double* data = _modelDataProvider.GetModelData(level);
-        double*  data = GetCpuToLevel(0, 2);
+         double* data = _modelDataProvider.GetModelData(level);
+        //double*  data = GetCpuToLevel(0, 2);
         printf("%s\n", "cpu");
         print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
         printf("%s\n", "gpu");

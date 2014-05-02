@@ -7,8 +7,8 @@
 #include <iostream>
 #include <math.h>
 
-
 #define C_pi_device 3.14159265358979323846264338327
+
 
 static double C_lbDom = 0., C_rbDom = 1.; //   -  Left and right boundaries of rectangular domain.
 static double *masOX; //   -  Massive of OX points. Dimension = C_numOfOXSt +1.
@@ -770,7 +770,7 @@ extern double analytSolut(
 	double ubDom,
 	//
 	double t, double x, double y );
-extern float solve_at_gpu(ComputeParameters* p);
+extern float solve_at_gpu(ComputeParameters* p, bool tl1);
 
 extern void cuda_solve(
 	double par_a, //   -  Item of left and right setback (parameter "a" in test).

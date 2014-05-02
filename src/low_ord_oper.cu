@@ -8,16 +8,17 @@
 #include "common.h"
 #include "cuda_constant.cuh"
 
+
 __device__ double d_u_function(double par_b, double t, double x,
-										double y) {
-											return par_b * y * (1. - y) * (C_pi_device / 2. + atan(-x));
+                                        double y) {
+                                            return par_b * y * (1. - y) * (C_pi_device / 2. + atan(-x));
 }
 
 __device__ double d_v_function(double lbDom, double rbDom,
-										double bbDom, double ubDom, double t, double x, double y) {
-											return atan(
-												(x - lbDom) * (x - rbDom) * (1. + t) / 10. * (y - ubDom)
-												* (y - bbDom));
+                                        double bbDom, double ubDom, double t, double x, double y) {
+                                            return atan(
+                                                (x - lbDom) * (x - rbDom) * (1. + t) / 10. * (y - ubDom)
+                                                * (y - bbDom));
 }
 
 __device__ double d_itemOfInteg_1SpecType(
@@ -60,6 +61,7 @@ __device__ double d_itemOfInteg_2SpecType(
     buf_D = buf_D - (a*Py + b - betta) * (a*Py + b - betta) * (a*Py + b - betta) * (a*Py + b - betta);
     return integ  -  buf_D / (12. *a *a);
 }
+__device__ bool d_integUnderLeftTr_OneCell111 = true;
 
 __device__ double d_integUnderLeftTr_OneCell(
     double par_a,                           //   -  Solution parameter.
@@ -100,17 +102,16 @@ __device__ double d_integUnderLeftTr_OneCell(
     double x, y;
     if(  (indCurSqOx[0] >=0)  &&  (indCurSqOx[1] <=numOfOXSt)  ) {
         if(  (indCurSqOy[0] >=0)  &&  (indCurSqOy[1] <=numOfOYSt)  ) {
-			//todo:  надо делить на numOfOXSt +1 потому что когда режу на части, то происходит выход за границы если делать так
 
-            /*rho[0][0] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0] ];
-            rho[0][1] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0] ];
-            rho[1][0] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1] ];
-            rho[1][1] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1] ];*/
-
-			rho[0][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0]) % (numOfOXSt +1)];
-            rho[0][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0])% (numOfOXSt +1) ];
-            rho[1][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1])% (numOfOXSt +1) ];
-            rho[1][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1])% (numOfOXSt +1) ];
+            rho[0][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0]) ];
+            rho[0][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0]) ];
+            rho[1][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1]) ];
+            rho[1][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1]) ];
+            if (iCurrTL == 2 && d_integUnderLeftTr_OneCell111 && (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1] == 13)
+            {
+                 printf("-20) gpu rho[1][1] = %.16f \n", rho[1][1]);  
+                 d_integUnderLeftTr_OneCell111 = false;
+            }
         }
     }
     if(  (indCurSqOx[0] < 0)  ||  (indCurSqOx[1] > numOfOXSt)  ||  (indCurSqOy[0] < 0)  ||  (indCurSqOy[1] > numOfOYSt)  ) {
@@ -125,6 +126,7 @@ __device__ double d_integUnderLeftTr_OneCell(
         rho[1][0]  =  d_analytSolut(t, x, y );
         x = indCurSqOx[1] * hx;
         y = indCurSqOy[1] * hy;
+        
         rho[1][1]  =  d_analytSolut(t, x, y );
     }
 
@@ -139,6 +141,8 @@ __device__ double d_integUnderLeftTr_OneCell(
     }
     buf_D = buf_D  -  bufInteg_D /2.;
     integ = buf_D * rho[0][0] /hx /hy;
+
+
     //   2.
     buf_D = (Qy - masOY[ indCurSqOy[1] ]) * (Qy - masOY[ indCurSqOy[1] ])  -  (Py - masOY[ indCurSqOy[1] ]) * (Py - masOY[ indCurSqOy[1] ]);
     if(  (indCurSqOx[0] >= 0)  &&  (indCurSqOy[1] >= 0)  ) {
@@ -150,6 +154,8 @@ __device__ double d_integUnderLeftTr_OneCell(
     }
     buf_D = buf_D  +  bufInteg_D /2.;
     integ = integ  +  buf_D * rho[1][0] /hx /hy;
+
+    
     //   3.
     buf_D = (Qy - masOY[ indCurSqOy[0] ]) * (Qy - masOY[ indCurSqOy[0] ])  -  (Py - masOY[ indCurSqOy[0] ]) * (Py - masOY[ indCurSqOy[0] ]);
     if(  (indCurSqOx[1] >= 0)  &&  (indCurSqOy[0] >= 0)  ) {
@@ -161,6 +167,9 @@ __device__ double d_integUnderLeftTr_OneCell(
     }
     buf_D = buf_D  +  bufInteg_D /2.;
     integ = integ  +  buf_D * rho[0][1] /hx /hy;
+
+   
+
     //   4.
     buf_D = (Qy - masOY[ indCurSqOy[0] ]) * (Qy - masOY[ indCurSqOy[0] ])  -  (Py - masOY[ indCurSqOy[0] ]) * (Py - masOY[ indCurSqOy[0] ]);
     if(  (indCurSqOx[0] >= 0)  &&  (indCurSqOy[0] >= 0)  ) {
@@ -171,7 +180,15 @@ __device__ double d_integUnderLeftTr_OneCell(
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[0], a_SL, b_SL,   hx * indCurSqOx[0]   );
     }
     buf_D = buf_D  -  bufInteg_D /2.;
-    return integ  +  buf_D * rho[1][1] /hx /hy;
+    /*if (iCurrTL == 2 && d_integUnderLeftTr_OneCell111)
+    {
+         printf("-14) gpu integ = %.16f buf_D = %.16f\n", integ, buf_D);  
+         printf("-14) gpu rho[1][1] = %.16f hx = %.16f hy = %.16f\n", rho[1][1], hx, hy);
+         d_integUnderLeftTr_OneCell111 = false;
+    }*/
+    integ +=  buf_D * rho[1][1] /hx /hy;
+    
+    return integ;
 }
 
 __device__ double d_integUnderRightTr_OneCell(
@@ -266,15 +283,11 @@ __device__ double d_integUnderRectAng_OneCell(
     double t = tau * (iCurrTL -1.);
     double x, y;
     if(   (indCurSqOx[0] >=0) && (indCurSqOy[0] >=0)  ) {
-    /*    rho[0][0] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0] ];
-        rho[0][1] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0] ];
-        rho[1][0] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1] ];
-        rho[1][1] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1] ];*/
-		
-			rho[0][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0]) % (numOfOXSt +1) ];
-            rho[0][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0]) % (numOfOXSt +1) ];
-            rho[1][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1]) % (numOfOXSt +1) ];
-            rho[1][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1]) % (numOfOXSt +1) ];
+        
+            rho[0][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0])  ];
+            rho[0][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0]) ];
+            rho[1][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1])  ];
+            rho[1][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1])  ];
     } else {
         x = indCurSqOx[0] * hx;
         y = indCurSqOy[0] * hy;
@@ -317,9 +330,12 @@ __device__ double d_integUnderRectAng_OneCell(
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx * indCurSqOx[0]  , hy * indCurSqOy[0] );
     }
     buf_D = buf_D  /hx /hy;
+   
+
     return integ + buf_D * rho[1][1];                    //   rhoInPrevTL[ indCurSqOx[1] ][ indCurSqOy[1] ];
 }
 
+__device__ bool d_integUnderRectAng_OneCell1 = true;
 
 __device__ double d_integOfChan_SLRightSd(                         //   -  The domain is Channel with Slant Line on the right side.
     double par_a,                           //   -  Solution parameter.
@@ -350,9 +366,6 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
     //
     double * rhoInPrevTL_asV )
 {
-
-
-
     double mv[2], rv[2];                                  //   -  Middle and right vertices.
     int wMvI;                                             //   -  Where middle vertex is.
     int indCurSqOxToCh[2];                                //   -  Indices of current square by Ox axis to be changed. Under which we want to integrate.
@@ -442,7 +455,7 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
                     numOfOYSt,                              //   -  Number of OY steps.
                     //
                     rhoInPrevTL_asV );
-
+        
         integ += buf_D;
 
         indCurSqOxToCh[0] +=  1;
@@ -493,8 +506,9 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
                     numOfOYSt,                              //   -  Number of OY steps.
                     //
                     rhoInPrevTL_asV );
-
+        
         integ += buf_D;
+
     }
 
 //   B. Under triangle.
@@ -535,10 +549,17 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
                         numOfOYSt,                              //   -  Number of OY steps.
                         //
                         rhoInPrevTL_asV );
-
+            
             integ += buf_D;
+                    if (iCurrTL == 2 && d_integUnderRectAng_OneCell1)
+            {
+              //printf("-6) gpu integ %.16f\n", integ);
+                //printf("-7) gpu buf_D %.16f\n", buf_D);
+                d_integUnderRectAng_OneCell1 = false;
+            }
         }
     }
+    
     return integ;
 }
 
@@ -1123,7 +1144,7 @@ __device__ double d_integUnderBottTr(
                     BvBt, LvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
 
-//		printf("Bv<Lv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//      printf("Bv<Lv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         return integOfBottTr;
     }
@@ -1142,7 +1163,7 @@ __device__ double d_integUnderBottTr(
                     BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr + buf_D;
 
-//		printf("Bv>Lv & Bv<Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//      printf("Bv>Lv & Bv<Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         return integOfBottTr;
     }
@@ -1160,7 +1181,7 @@ __device__ double d_integUnderBottTr(
                     BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
 
-//		printf("Bv>Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//      printf("Bv>Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         return integOfBottTr;
     }
@@ -1207,7 +1228,7 @@ __device__ double d_integUnderRigAngTr_UppLeft(
     //   Initial data.
     trPC[0] = bv[0];
     trPC[1] = bv[1];
-    if(  ( fabs(bv[0] - uv[0]) )  <  1.e-12  )	return fabs(bv[0] - uv[0]);
+    if(  ( fabs(bv[0] - uv[0]) )  <  1.e-12  )  return fabs(bv[0] - uv[0]);
 
     ang = (uv[1] - bv[1]) / (uv[0] - bv[0]);
     if(  fabs(ang)  <  1.e-12  ) return fabs(ang);
@@ -1329,6 +1350,7 @@ __device__ double d_integUnderRigAngTr_UppLeft(
     } while( !isTrDone );
     return integOfUppTr;
 }
+__device__ bool d_integUnderRigAngTr_UppRight1 = true;
 
 __device__ double d_integUnderRigAngTr_UppRight(
     double par_a,                           //   -  Solution parameter.
@@ -1464,6 +1486,11 @@ __device__ double d_integUnderRigAngTr_UppRight(
                     numOfOYSt,                              //   -  Number of OY steps.
                     //
                     rhoInPrevTL_asV );
+/*if (iCurrTL == 2 && d_integUnderRigAngTr_UppRight1)
+{
+    printf("0) gpu buf_D = %.16f\n", buf_D);
+    d_integUnderRigAngTr_UppRight1 = false;
+}*/
         integOfUppTr = integOfUppTr + buf_D;
         //   e. Updating.
         if( isTrDone == false ) {
@@ -1495,6 +1522,7 @@ __device__ double d_integUnderRigAngTr_UppRight(
     } while(!isTrDone);
     return integOfUppTr;
 }
+__device__ bool d_integUnderUpperTr1 = true;
 
 __device__ double d_integUnderUpperTr(
     double par_a,                           //   -  Item of left and right setback (parameter "a" in test).
@@ -1519,7 +1547,7 @@ __device__ double d_integUnderUpperTr(
     const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
     int numOfOYSt,                          //   -  Number of OY step
     //
-    double * rhoInPrevTL_asV )
+    double * rhoInPrevTL_asV)
 {
     double integOfUppTr;
     double buf_D;
@@ -1530,12 +1558,22 @@ __device__ double d_integUnderUpperTr(
                     par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
                     //
                     RvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+        /*if (d_integUnderUpperTr1 && iCurrTL == 2)
+        {
+            printf("1) gpu uppright buf_D = %.16f\n", buf_D);
+            d_integUnderUpperTr1 = false;
+        }*/
         integOfUppTr = buf_D;
         buf_D = d_integUnderRigAngTr_UppRight(
                     par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
                     //
                     LvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr - buf_D;
+        /*if (d_integUnderUpperTr1 && iCurrTL == 2)
+        {
+            printf("1) gpu integOfUppTr = %.16f\n", integOfUppTr);
+            d_integUnderUpperTr1 = false;
+        }*/
         return integOfUppTr;
     }
     //   2.
@@ -1674,7 +1712,7 @@ __device__ double d_integUnderUnunifTr(
     }
     ap[0]  =  (c_LC  -  b_LC * ap[1])  /a_LC;
 
-//	printf("i= %d, j= %d : ap[0]= %le      mv[0]= %le \n",ii,jj, ap[0], mv[0]); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//  printf("i= %d, j= %d : ap[0]= %le      mv[0]= %le \n",ii,jj, ap[0], mv[0]); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
     //   3. There the middle vertex relativly straight line is? Two ways are possible.
@@ -1705,7 +1743,7 @@ __device__ double d_integUnderUnunifTr(
                             ii, jj ); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         integ = integOfBottTr;
 
-//		printf("m<a:   i= %d, j= %d : integ= %le \n",ii,jj, integ); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//      printf("m<a:   i= %d, j= %d : integ= %le \n",ii,jj, integ); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         //   Left, Right and Upper vertices of Upper triangle.
         LvUt[0]  =  mv[0];
@@ -1714,6 +1752,28 @@ __device__ double d_integUnderUnunifTr(
         RvUt[1]  =  ap[1];
         UvUt[0]  =  uv[0];
         UvUt[1]  =  uv[1];
+        int opt = (numOfOXSt + 1)*jj + ii ;
+        if (iCurrTL == 2  && opt == 12)
+        {
+           /* printf("gpu !!!!! uv[0] %.16f\n", uv[0]);
+            printf("gpu !!!!! firVer[0] %.16f\n", firVer[0]);
+            printf("gpu !!!!! secVer[0] %.16f\n", secVer[0]);
+            printf("gpu !!!!! thiVer[0] %.16f\n", thiVer[0]);
+            printf("gpu !!!!! par_a %.16f\n", par_a);
+            printf("gpu !!!!! par_b %.16f\n", par_b);
+            printf("gpu !!!!! lbDom %.16f\n", lbDom);
+            printf("gpu !!!!! rbDom %.16f\n", rbDom);
+            printf("gpu !!!!! bbDom %.16f\n", bbDom);
+            printf("gpu !!!!! ubDom %.16f\n", ubDom);
+            printf("gpu !!!!! tau %.16f\n", tau);
+            printf("gpu !!!!! iCurrTL %d\n", iCurrTL);
+            printf("gpu !!!!! LvUt[0] %.16f\n", LvUt[0]);
+            printf("gpu !!!!! LvUt[1] %.16f\n", LvUt[1]);
+            printf("gpu !!!!! RvUt[0] %.16f\n", RvUt[0]);
+            printf("gpu !!!!! RvUt[1] %.16f\n", RvUt[1]);
+            printf("gpu !!!!! UvUt[0] %.16f\n", UvUt[0]); // 
+            printf("gpu !!!!! UvUt[1] %.16f\n", UvUt[1]);*/
+        }
         integOfUppTr = d_integUnderUpperTr(
                            par_a, par_b,
                            //
@@ -1729,8 +1789,17 @@ __device__ double d_integUnderUnunifTr(
                            //
                            masOY, numOfOYSt,                       //   -  Number of OY steps.
                            //
-                           rhoInPrevTL_asV );
+                           rhoInPrevTL_asV);
+    /*if (iCurrTL == 2  && opt == 12)
+    {
+        printf("gpu !!!!! integ %.16f\n", integOfUppTr);
+    }*/
         integ = integ + integOfUppTr;
+        /*int opt = (numOfOXSt + 1)*jj + ii ;
+    if (iCurrTL == 2  && opt == 12)
+    {
+printf("gpu !!!!! integ %.18f\n", integ);
+    }*/
         return integ;
     }
     if( mv[0] >= ap[0] ) {
@@ -1760,7 +1829,7 @@ __device__ double d_integUnderUnunifTr(
                             ii, jj ); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         integ = integOfBottTr;
 
-//		printf("m>a:   i= %d, j= %d : integ= %le \n",ii,jj, integ);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//      printf("m>a:   i= %d, j= %d : integ= %le \n",ii,jj, integ);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         //   Left, Right and Upper vertices of Upper triangle.
         LvUt[0]  =  ap[0];
@@ -1792,38 +1861,22 @@ __device__ double d_integUnderUnunifTr(
 
 __device__ double d_f_function(const int current_tl, const int i, const int j)
 { 
-//    printf("\ngpu f function \n");
-//    printf("gpu t = %f\n", c_tau*current_tl);
     double x  =  c_h * i ;
- //   printf("gpu x = %f\n", x);
     double y  =  c_h * j ;
-  //  printf("gpu y = %f\n", y);
-
     double arg_v  =  (x - c_lb) * (x - c_rb) * (1.+c_tau*current_tl) /10. * (y - c_ub) * (y - c_bb);
- //   printf("gpu arg_v = %f\n", arg_v);
     double rho, dRhoDT, dRhoDX, dRhoDY;
     double u, duDX;
     double v, dvDY;
     rho  =  d_analytSolut(c_tau*current_tl, x, y );
-  //  printf("gpu rho = %f\n", rho);
     dRhoDT  =  x * y * cos( c_tau*current_tl*x*y );
-   // printf("gpu dRhoDT = %f\n", dRhoDT);
     dRhoDX  =  c_tau*current_tl * y * cos( c_tau*current_tl*x*y );
-  //  printf("gpu dRhoDX = %f\n", dRhoDX);
     dRhoDY  =  c_tau*current_tl * x * cos( c_tau*current_tl*x*y );
-  //  printf("gpu dRhoDY = %f\n", dRhoDY);
     u  =  d_u_function(c_b, c_tau*current_tl, x, y );
-  //  printf("gpu u = %f\n", u);
     duDX  = -c_b * y * (1.-y)  /  ( 1.  +  x * x );
-  //  printf("gpu duDX = %f\n", duDX);
     v  =  d_v_function(c_lb, c_rb, c_bb, c_ub, c_tau*current_tl, x, y );
-  //  printf("gpu v = %f\n", v);
     dvDY  =  (x - c_lb) * (x - c_rb) * (1.+c_tau*current_tl) /10. * (y - c_bb + y - c_ub);
-   // printf("gpu dvDY 1 = %f\n", dvDY);
     dvDY  =  dvDY  /  ( 1.  +  arg_v * arg_v );
-  //  printf("gpu dvDY 2 = %f\n", dvDY);
     double res = dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
- //   printf("gpu res = %f\n", res);
     return res;
 }
 
@@ -1845,31 +1898,58 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
     double first2[2]; double second2[2]; double third2[2];
     // get_square_coord
     double x, y;
-
+    double c_tau_to_current_tl = (1. + current_tl * c_tau) / 10.;
     // A
 
     x = (c_h*(i - 1) + c_h*i) / 2.;
     y = (c_h*(j - 1) + c_h*j) / 2.;
     first1[0] = first2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-    first1[1] = first2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+    first1[1] = first2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_tl * (y - c_ub) * (y - c_bb));
+    
+    // if (current_tl == 2 && i == 1 && j == 1)
+    // {
+    //     printf("gpu first1[0] = first2[0] %.16f\n", first1[0]);
+    //     printf("gpu first1[1] = first2[1] %.16f\n", first1[1]);
 
+    // }
     // B
     x = (c_h*(i + 1) + c_h*i) / 2.;
     second1[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-    second1[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+    second1[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_tl * (y - c_ub) * (y - c_bb));
+    // if (current_tl == 2 && i == 1 && j == 1)
+    // {
+    //     printf("gpu second1[0] %.16f\n", second1[0]);
+    //     printf("gpu second1[1] %.16f\n", second1[1]);
 
+    // }
     // C
     y = (c_h*(j + 1) + c_h*j) / 2.;
     third1[0] = third2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-    third1[1] = third2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+    third1[1] = third2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_tl * (y - c_ub) * (y - c_bb));
+    /*if (current_tl == 2 && i == 1 && j == 1)
+    {
+        printf("gpu third1[0] = third2[0] %.16f\n", third1[0]);
+        printf("gpu third1[1] = third2[1] %.16f\n", third1[1]);
 
+    }*/
     // D 
     x = (c_h*(i - 1) + c_h*i) / 2.;
     second2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-    second2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+    second2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_tl * (y - c_ub) * (y - c_bb));
+   /* if (current_tl == 2 && i == 1 && j == 1)
+    {
+        printf("gpu second2[0] =  %.16f\n", second2[0]);
+        printf("gpu second2[1] =  %.16f\n", second2[1]);
 
+    }*/
     double* ax = init_x_y(10); //залепуха удалить
     double* ay = init_x_y(10);
+
+    if (current_tl == 2 && i == 1 && j == 1)
+    {
+      //  printf("gpu third1[0]  %.16f\n", third1[0]);
+
+    }
 
     double buf_D = d_integUnderUnunifTr(
                    c_a, c_b,
@@ -1881,7 +1961,28 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
                    ay, 10, //c_y_size,
                    prev_result,
                    i, j);
+    /*if (current_tl == 2 && i == 1 && j == 1)
+    {
+        printf("%d %d\n", i, j);
+        printf("gpu numOfOXSt %d\n", 10);
+        printf("gpu numOfOYSt %d\n", 10);
+        for (int pp = 0; pp < 10; pp++)
+        {
+            printf("%f ", ax[pp]);
+        }
+        printf("%s\n", "");
+        for (int pp = 0; pp < 10; pp++)
+        {
+            printf("%f ", ay[pp]);
+        }
+        printf("%s\n", "");
+        printf("gpu buf_d %.16f\n", buf_D);
+    }
 
+    if (current_tl == 1 && i == 1 && j == 1)
+    {
+        printf("gpu ctl =1 buf_d %.16f\n", buf_D);
+    }*/
 
     return buf_D + d_integUnderUnunifTr(
            c_a, c_b,
@@ -1896,8 +1997,6 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
           // return 0;
 }
 
-
-
 __global__ void kernel(double* prev_result, double* result, int current_tl)
 {
     for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
@@ -1908,38 +2007,60 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
         // расчет границы
         if (j == 0)  // bottom bound
         {
-            result[ opt ]  = 1.1  +  sin( c_tau_to_current_time_level_to_h * j * c_bb );
+            result[ opt ]  = 1.1  +  sin( c_tau_to_h * current_tl * j * c_bb );
         }
         else if (i == 0) // left bound
         {
-            result[ opt ] = 1.1  +  sin( c_tau_to_current_time_level_to_h * i * c_lb );
+            result[ opt ] = 1.1  +  sin( c_tau_to_h * current_tl * i * c_lb );
         }
         else if (j == c_y_st_number - 1) // upper bound
         { 
-            result[ opt ] = 1.1  +  sin( c_tau_to_current_time_level_to_h * i * c_ub );
+            result[ opt ] = 1.1  +  sin( c_tau_to_h * current_tl * i * c_ub );
         }
         else if (i == c_x_st_number - 1) // right bound
         { 
-            result[ opt ] = 1.1  +  sin(  c_tau_to_current_time_level_to_h * j * c_rb );
+            result[ opt ] = 1.1  +  sin(  c_tau_to_h * current_tl * j * c_rb );
         }
-        if (i > 0 && j > 0 && j != c_y_st_number - 1 && i != c_x_st_number - 1)
+        else if (i > 0 && j > 0 && j != c_y_st_number - 1 && i != c_x_st_number - 1)
         {
             double sp =  space_volume_in_prev_tl(prev_result, current_tl, i, j);
-      //      printf("\ngpu sp = %f\n", sp);
+          /*  if (current_tl == 2 && opt == 12) {
+                printf("gpu sp = %.16f\n", sp);
+            }*/
             double buf_D  =  (c_h*(i + 1)  -  c_h*(i - 1)) /2.;
-     //       printf("gpu buf_D x = %f\n", buf_D);
-            sp /= buf_D;
-     //       printf("gpu sp /= buf_D y = %f\n", sp);
+            
             buf_D  =  (c_h*(j + 1)  -  c_h*(j - 1)) /2.;
-      //      printf("gpu buf_D x = %f\n", buf_D);
-            sp /= buf_D;                     
-      //      printf("gpu sp /= buf_D y = %f\n", sp); 
+           /* if (current_tl == 2 && opt == 12) {
+                printf("gpu buf_D = %.8f\n", buf_D);
+                printf("gpu sp = %.8f\n", sp);
+                printf("gpu sp / buf_D = %.8f\n", sp / buf_D);
+
+            }*/
+            sp = sp / buf_D;
+            
+            /*buf_D  =  (c_h*(j + 1)  -  c_h*(j - 1)) /2.;
+            if (current_tl == 2 && opt == 12) {
+                printf("gpu buf_D = %.8f\n", buf_D);
+                printf("gpu sp = %.8f\n", sp);
+                printf("gpu sp / buf_D = %.8f\n", sp / buf_D);
+
+            }*/
+            sp = sp / buf_D;                     
+
             result[ opt ]  =  sp;
-     //       printf("gpu tau = %f\n", c_tau);
+
             double f = d_f_function(current_tl, i,j);
-     //       printf("gpu c_tau %f\n", c_tau);
-      //      printf("gpu f = %f\n", f);
+           /* if (current_tl == 2 && opt == 12) {
+                printf("gpu c_tau %.8f\n", c_tau);
+                printf("gpu f = %.8f\n", f);
+                printf("gpu c_tau * f = %.8f\n", c_tau * f);
+                printf("gpu result[ opt ] = %.8f\n", result[ opt ]);
+                printf("gpu result[ opt ] + c_tau * f = %.8f\n", result[ opt ] + c_tau * f);
+            }*/
+     
+
             result[ opt ] +=  c_tau * f;
+          
        //     return;
         }
     }
@@ -1959,8 +2080,48 @@ double* init_rho(ComputeParameters *p)
     return rhoInPrevTL_asV;
 }
 
+void print_matrix(int n, int m, double* a, int precision = 8)
+    {
 
-float solve_at_gpu(ComputeParameters *p)
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = 0; j < m; ++j)
+                {
+                    int k = i*n + j;
+                    switch (precision)
+                    {
+                          case 1:
+                             printf("%.1f ", a[k]);
+                             break;
+                          case 2:
+                             printf("%.2f ", a[k]);
+                              break;
+                          case 3:
+                              printf("%.3f ", a[k]);
+                              break;
+                          case 4:
+                              printf("%.4f ", a[k]);
+                              break;
+                          case 5:
+                             printf("%.5f ", a[k]);
+                              break;
+                          case 6:
+                             printf("%.6f ", a[k]);
+                              break;
+                          case 7:
+                              printf("%.7f ", a[k]);
+                              break;
+                          case 8:
+                              printf("%.8f ", a[k]);
+                              break;
+                    }
+                }
+                printf("\n");
+            }
+    }
+
+
+float solve_at_gpu(ComputeParameters *p, bool tl1)
 {
     assert(p != NULL);
     assert(p->result != NULL);
@@ -1996,11 +2157,8 @@ float solve_at_gpu(ComputeParameters *p)
     temp_d = 1. / (p->x_size);
     cudaMemcpyToSymbol(c_h, &temp_d, sizeof(double));
 
-    temp_d = (1. + p->currentTimeLevel * p->tau) / 10.;
-    cudaMemcpyToSymbol(c_tau_to_current_time_level, &temp_d, sizeof(double));
-
-    temp_d = p->currentTimeLevel * p->tau * 1. / (p->x_size);
-    cudaMemcpyToSymbol(c_tau_to_current_time_level_to_h, &temp_d, sizeof(double));
+    temp_d = p->tau / (p->x_size);
+    cudaMemcpyToSymbol(c_tau_to_h, &temp_d, sizeof(double));
 
     temp_d = p->b * p->tau;
     cudaMemcpyToSymbol(c_tau_b, &temp_d, sizeof(double));
@@ -2012,19 +2170,31 @@ float solve_at_gpu(ComputeParameters *p)
     checkCuda(cudaMalloc((void**)&(prev_result), size) );
     cudaMemcpy(prev_result, rhoInPrevTL_asV, size, cudaMemcpyHostToDevice);
     
-    cudaEventRecord(start, 0);
-    /*int tl = 0; 
-    int tempTl = p->t_count - 1;  
-    while(tl < tempTl)
+    cudaEventRecord(start, 0);   
+
+    if (tl1 == true)
     {
-        kernel<<<gridSize, blockSize>>>(prev_result, result, tl + 1);
-        kernel<<<gridSize, blockSize>>>(result, prev_result, tl + 2);         
-        tl += 2;            
-    }  
-cudaMemcpy(p->result, prev_result, size, cudaMemcpyDeviceToHost);
-    */
-    kernel<<<gridSize, blockSize>>>(prev_result, result, 1);
-    cudaMemcpy(p->result, result, size, cudaMemcpyDeviceToHost);
+        kernel<<<gridSize, blockSize>>>(prev_result, result, 1);
+        cudaMemcpy(p->result, result, size, cudaMemcpyDeviceToHost);
+    }
+    else
+    {
+        int tl = 0;
+        int tempTl = p->t_count - 1;  
+        while(tl < tempTl)
+        {
+            kernel<<<gridSize, blockSize>>>(prev_result, result, tl + 1);
+            // cudaMemcpy(p->result, prev_result, size, cudaMemcpyDeviceToHost);
+            // print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
+            // printf("%s\n", "");
+            // cudaMemcpy(p->result, result, size, cudaMemcpyDeviceToHost);
+            // print_matrix(p->get_real_y_size(), p->get_real_y_size(), p->result);
+            kernel<<<gridSize, blockSize>>>(result, prev_result, tl + 2);         
+            tl += 2;            
+        }  
+        cudaMemcpy(p->result, prev_result, size, cudaMemcpyDeviceToHost);
+    }
+    
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);

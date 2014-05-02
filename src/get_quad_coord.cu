@@ -20,115 +20,115 @@ int get_cuda_device_count()
    return count;
 }
 
-__constant__ double c_tau;
-__constant__ double c_h;
-__constant__ double c_tau_to_current_time_level;
-__constant__ double c_lb;
-__constant__ double c_rb;
-__constant__ double c_ub;
-__constant__ double c_bb;
-__constant__ double c_tau_b;
-__constant__ double c_pi_half;
-__constant__ int c_x_length;
-__constant__ int c_n;
+__constant__ double c_tau1;
+__constant__ double c_h1;
+__constant__ double c_tau_to_current_time_level1;
+__constant__ double c_lb1;
+__constant__ double c_rb1;
+__constant__ double c_ub1;
+__constant__ double c_bb1;
+__constant__ double c_tau_b1;
+__constant__ double c_pi_half1;
+__constant__ int c_x_length1;
+__constant__ int c_n1;
 
 __global__ void get_square_coord(double* first1, double* second1, double* third1,
 	double* first2, double* second2, double* third2)
 {
-	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
+	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n1; opt += blockDim.x * gridDim.x)
 	{
-		int i = opt % c_x_length + 1;
-		int j = opt / c_x_length + 1;
+		int i = opt % c_x_length1 + 1;
+		int j = opt / c_x_length1 + 1;
 		double x, y;
 
 		// A
-		x = (c_h*(i - 1) + c_h*i) / 2.;
-		y = (c_h*(j - 1) + c_h*j) / 2.;
-		first1[2 * opt] = first2[2 * opt] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		first1[2 * opt + 1] = first2[2 * opt + 1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		x = (c_h1*(i - 1) + c_h1*i) / 2.;
+		y = (c_h1*(j - 1) + c_h1*j) / 2.;
+		first1[2 * opt] = first2[2 * opt] = x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		first1[2 * opt + 1] = first2[2 * opt + 1] = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 
 		// B
-		x = (c_h*(i + 1) + c_h*i) / 2.;
-		//	y = (c_h*(j - 1) + c_h*j) / 2.; // это значение совпадает со значением для предыдущей точки значит его можно не расчитывать
-		second1[2 * opt] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		second1[2 * opt + 1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		x = (c_h1*(i + 1) + c_h1*i) / 2.;
+		//	y = (c_h1*(j - 1) + c_h1*j) / 2.; // это значение совпадает со значением для предыдущей точки значит его можно не расчитывать
+		second1[2 * opt] = x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		second1[2 * opt + 1] = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 
 		// C
 		//x = (a_x[i + 1] + a_x[i]) / 2.; // это значение совпадает со значением для предыдущей точки значит его можно не расчитывать
-		y = (c_h*(j + 1) + c_h*j) / 2.;
-		third1[2 * opt] = third2[2 * opt] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		third1[2 * opt + 1] = third2[2 * opt + 1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		y = (c_h1*(j + 1) + c_h1*j) / 2.;
+		third1[2 * opt] = third2[2 * opt] = x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		third1[2 * opt + 1] = third2[2 * opt + 1] = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 
 		// D 
-		x = (c_h*(i - 1) + c_h*i) / 2.;
+		x = (c_h1*(i - 1) + c_h1*i) / 2.;
 		//y = (a_y[j + 1] + a_y[j]) / 2.; // это значение совпадает со значением для предыдущей точки значит его можно не расчитывать
-		second2[2 * opt] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		second2[2 * opt + 1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		second2[2 * opt] = x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		second2[2 * opt + 1] = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 	}
 }
 
 __global__ void get_square_coord_first1_2(double *result)
 {
-	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
+	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n1; opt += blockDim.x * gridDim.x)
 	{
-		int i = opt % c_x_length + 1;
-		int j = opt / c_x_length + 1;
+		int i = opt % c_x_length1 + 1;
+		int j = opt / c_x_length1 + 1;
 		double x, y;
 
 		// A
-		x = (c_h*(i - 1) + c_h*i) / 2.;
-		y = (c_h*(j - 1) + c_h*j) / 2.;
-		result[2 * opt] =  x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		result[2 * opt + 1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		x = (c_h1*(i - 1) + c_h1*i) / 2.;
+		y = (c_h1*(j - 1) + c_h1*j) / 2.;
+		result[2 * opt] =  x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		result[2 * opt + 1] = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 	}
 }
 
 __global__ void get_square_coord_second1(double *result)
 {
-	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
+	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n1; opt += blockDim.x * gridDim.x)
 	{
-		int i = opt % c_x_length + 1;
-		int j = opt / c_x_length + 1;
+		int i = opt % c_x_length1 + 1;
+		int j = opt / c_x_length1 + 1;
 
 		double x, y;
 // B
-		x = (c_h*(i + 1) + c_h*i) / 2.;
-		result[2 * opt] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		result[2 * opt + 1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		x = (c_h1*(i + 1) + c_h1*i) / 2.;
+		result[2 * opt] = x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		result[2 * opt + 1] = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 		
 	}
 }
 
 __global__ void get_square_coord_third1_2(double *result)
 {
-	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
+	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n1; opt += blockDim.x * gridDim.x)
 	{
-		int i = opt % c_x_length + 1;
-		int j = opt / c_x_length + 1;
+		int i = opt % c_x_length1 + 1;
+		int j = opt / c_x_length1 + 1;
 
 		double x, y;
 // C
 		//x = (a_x[i + 1] + a_x[i]) / 2.; // это значение совпадает со значением для предыдущей точки значит его можно не расчитывать
-		y = (c_h*(j + 1) + c_h*j) / 2.;
-		result[2 * opt]  = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		result[2 * opt + 1]  = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		y = (c_h1*(j + 1) + c_h1*j) / 2.;
+		result[2 * opt]  = x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		result[2 * opt + 1]  = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 		
 	}
 }
 
 __global__ void get_square_coord_second2(double *result)
 {
-	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
+	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n1; opt += blockDim.x * gridDim.x)
 	{
-		int i = opt % c_x_length + 1;
-		int j = opt / c_x_length + 1;
+		int i = opt % c_x_length1 + 1;
+		int j = opt / c_x_length1 + 1;
 
 		double x, y;
 // D 
-		x = (c_h*(i - 1) + c_h*i) / 2.;
+		x = (c_h1*(i - 1) + c_h1*i) / 2.;
 		//y = (a_y[j + 1] + a_y[j]) / 2.; // это значение совпадает со значением для предыдущей точки значит его можно не расчитывать
-		result[2 * opt] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
-		result[2 * opt + 1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_time_level * (y - c_ub) * (y - c_bb));
+		result[2 * opt] = x - c_tau_b1 * y * (1. - y) * (c_pi_half1 + atan(-x));
+		result[2 * opt + 1] = y - c_tau1 * atan((x - c_lb1) * (x - c_rb1) * c_tau_to_current_time_level1 * (y - c_ub1) * (y - c_bb1));
 			
 	}
 }
@@ -152,24 +152,24 @@ float get_quad_coord(TriangleResult* result, ComputeParameters* p)
 	// Start record
 	cudaEventRecord(start, 0);
 
-	cudaMemcpyToSymbol(c_tau, &p->tau, sizeof(double));
-	cudaMemcpyToSymbol(c_lb, &p->lb, sizeof(double));
-	cudaMemcpyToSymbol(c_rb, &p->rb, sizeof(double));
-	cudaMemcpyToSymbol(c_bb, &p->bb, sizeof(double));
-	cudaMemcpyToSymbol(c_ub, &p->ub, sizeof(double));
-	cudaMemcpyToSymbol(c_n, &n, sizeof(int));
-	cudaMemcpyToSymbol(c_x_length, &result->x_length, sizeof(int));
+	cudaMemcpyToSymbol(c_tau1, &p->tau, sizeof(double));
+	cudaMemcpyToSymbol(c_lb1, &p->lb, sizeof(double));
+	cudaMemcpyToSymbol(c_rb1, &p->rb, sizeof(double));
+	cudaMemcpyToSymbol(c_bb1, &p->bb, sizeof(double));
+	cudaMemcpyToSymbol(c_ub1, &p->ub, sizeof(double));
+	cudaMemcpyToSymbol(c_n1, &n, sizeof(int));
+	cudaMemcpyToSymbol(c_x_length1, &result->x_length, sizeof(int));
 	temp = 1. / (result->x_length + 1);
-	cudaMemcpyToSymbol(c_h, &temp, sizeof(double));
+	cudaMemcpyToSymbol(c_h1, &temp, sizeof(double));
 
 	temp = (1. + p->currentTimeLevel * p->tau) / 10.;
-	cudaMemcpyToSymbol(c_tau_to_current_time_level, &temp, sizeof(double));
+	cudaMemcpyToSymbol(c_tau_to_current_time_level1, &temp, sizeof(double));
 
 	temp = p->b * p->tau;
-	cudaMemcpyToSymbol(c_tau_b, &temp, sizeof(double));
+	cudaMemcpyToSymbol(c_tau_b1, &temp, sizeof(double));
 
 	temp = C_pi_device / 2.;
-	cudaMemcpyToSymbol(c_pi_half, &temp, sizeof(double));
+	cudaMemcpyToSymbol(c_pi_half1, &temp, sizeof(double));
 
 	size = 2 * sizeof(double)*n;
 	
@@ -259,24 +259,24 @@ float get_quad_coord(TriangleResult* result, ComputeParameters* p)
 	// Start record
 	cudaEventRecord(start, 0);
 
-	cudaMemcpyToSymbol(c_tau, &p->tau, sizeof(double));
-	cudaMemcpyToSymbol(c_lb, &p->lb, sizeof(double));
-	cudaMemcpyToSymbol(c_rb, &p->rb, sizeof(double));
-	cudaMemcpyToSymbol(c_bb, &p->bb, sizeof(double));
-	cudaMemcpyToSymbol(c_ub, &p->ub, sizeof(double));
-	cudaMemcpyToSymbol(c_n, &n, sizeof(int));
-	cudaMemcpyToSymbol(c_x_length, &result->x_length, sizeof(int));
+	cudaMemcpyToSymbol(c_tau1, &p->tau, sizeof(double));
+	cudaMemcpyToSymbol(c_lb1, &p->lb, sizeof(double));
+	cudaMemcpyToSymbol(c_rb1, &p->rb, sizeof(double));
+	cudaMemcpyToSymbol(c_bb1, &p->bb, sizeof(double));
+	cudaMemcpyToSymbol(c_ub1, &p->ub, sizeof(double));
+	cudaMemcpyToSymbol(c_n1, &n, sizeof(int));
+	cudaMemcpyToSymbol(c_x_length1, &result->x_length, sizeof(int));
 	temp = 1. / (result->x_length + 1);
-	cudaMemcpyToSymbol(c_h, &temp, sizeof(double));
+	cudaMemcpyToSymbol(c_h1, &temp, sizeof(double));
 
 	temp = (1. + p->currentTimeLevel * p->tau) / 10.;
-	cudaMemcpyToSymbol(c_tau_to_current_time_level, &temp, sizeof(double));
+	cudaMemcpyToSymbol(c_tau_to_current_time_level1, &temp, sizeof(double));
 
 	temp = p->b * p->tau;
-	cudaMemcpyToSymbol(c_tau_b, &temp, sizeof(double));
+	cudaMemcpyToSymbol(c_tau_b1, &temp, sizeof(double));
 
-	temp = C_pi_device / 2.;
-	cudaMemcpyToSymbol(c_pi_half, &temp, sizeof(double));
+	temp = 3.14159265358979323846264338327 / 2.;
+	cudaMemcpyToSymbol(c_pi_half1, &temp, sizeof(double));
 
 	size = 2 * sizeof(double)*n;
 	checkCuda(cudaMalloc((void**)&(first1), size) );

@@ -109,6 +109,7 @@ protected:
 			C_ubDom, C_tau, C_numOfTSt, masOX, C_numOfOXSt, masOY,
 			C_numOfOYSt, level);
 	}
+
 };
 
 TEST_F(cputest, CpuTestModel11)
@@ -236,6 +237,14 @@ protected:
 	{
 		return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
 			C_ubDom, C_tau, C_numOfTSt, masOX, C_numOfOXSt, masOY,
+			C_numOfOYSt, level);
+	}
+
+
+	double* GetCpuToLevel(int level, int tl_count)
+	{
+		return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
+			C_ubDom, C_tau, tl_count, masOX, C_numOfOXSt, masOY,
 			C_numOfOYSt, level);
 	}
 };
@@ -369,22 +378,37 @@ TEST_F(gputest, main_test)
 		ComputeParameters* p = new ComputeParameters(level, true);
 	    ASSERT_TRUE(p->result != NULL);
 	    ASSERT_TRUE(p->t_count == 50);
-		float gpu_time = solve_at_gpu(p);
+	    p->t_count = 3;
+		float gpu_time = solve_at_gpu(p, false);
         ASSERT_TRUE(gpu_time != -1);
-        double* data = _modelDataProvider.GetModelData(level);
+       // double* data = _modelDataProvider.GetModelData(level);
+        double*  data = GetCpuToLevel(0, 2);
         printf("%s\n", "cpu");
         print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
         printf("%s\n", "gpu");
         print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
+
+        printf("%s\n", "Diff...");
+		double *diff = new double[p->get_real_matrix_size()];
+		for (int i = 0; i < p->get_real_matrix_size(); i++)
+		{
+			diff[i] = fabs(data[i] - p->result[i]);
+		}
+        print_matrix(p->get_real_x_size(), p->get_real_y_size(), diff);
         printf("%s\n", "Start testing...");
+
 		for (int i = 0; i < p->get_real_matrix_size(); i++)
 		{
 			ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
 		}
 
 		delete p;
+		delete diff;
+		delete data;
 	}
 }
+
+
 
 TEST_F(gputest, main_test_1tl_boundaries)
 {
@@ -394,7 +418,7 @@ TEST_F(gputest, main_test_1tl_boundaries)
 
 	ComputeParameters* p = new ComputeParameters(0, true);
     ASSERT_TRUE(p->result != NULL);
-	float gpu_time = solve_at_gpu(p);
+	float gpu_time = solve_at_gpu(p, true);
     ASSERT_TRUE(gpu_time != -1);
     double* data = _modelDataProvider.GetModelData1tl(0);
     /*print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
@@ -414,6 +438,7 @@ TEST_F(gputest, main_test_1tl_boundaries)
 	}
 
 	delete p;
+	delete data;
 }
 
 TEST_F(gputest, main_test_1tl_inner)
@@ -424,7 +449,7 @@ TEST_F(gputest, main_test_1tl_inner)
 
 	ComputeParameters* p = new ComputeParameters(0, true);
     ASSERT_TRUE(p->result != NULL);
-	float gpu_time = solve_at_gpu(p);
+	float gpu_time = solve_at_gpu(p, true);
     ASSERT_TRUE(gpu_time != -1);
     double* data = _modelDataProvider.GetModelData1tl(0);
     //double* data = GetCpuToLevel(0);
@@ -447,9 +472,19 @@ TEST_F(gputest, main_test_1tl_inner)
 	}
 
 	delete p;
+	delete data;
 }
 
 TEST_F(gputest, gen_1tl)
+{
+	const int finishLevel = 1;
+	const int startLevel = 0;
+	const double error = 1.0e-8;
+	double* tl1 = GetCpuToLevel(0);
+	//print_matrix(11, 11, tl1);	
+}
+
+TEST_F(gputest, gen_2tl)
 {
 	const int finishLevel = 1;
 	const int startLevel = 0;

@@ -91,7 +91,7 @@ double itemOfInteg_2SpecType(
 	buf_D = buf_D - (a*Py + b - betta) * (a*Py + b - betta) * (a*Py + b - betta) * (a*Py + b - betta);
 	return integ - buf_D / (12. *a *a);
 }
-
+bool integUnderLeftTr_OneCell111 = true;
 double integUnderLeftTr_OneCell(
 	double par_a, //   -  Solution parameter.
 	//
@@ -137,6 +137,11 @@ double integUnderLeftTr_OneCell(
 			rho[0][1] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0] ];
 			rho[1][0] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1] ];
 			rho[1][1] = rhoInPrevTL_asV[ (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1] ];
+			if (iCurrTL == 2 && integUnderLeftTr_OneCell111 && (numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1] == 13)
+            {
+                 printf("-20) cpu rho[1][1] = %.16f \n", rho[1][1]);  
+                 integUnderLeftTr_OneCell111 = false;
+            }
 		}
 	}
 	if( (indCurSqOx[0] < 0) || (indCurSqOx[1] > numOfOXSt) || (indCurSqOy[0] < 0) || (indCurSqOy[1] > numOfOYSt) )
@@ -152,7 +157,9 @@ double integUnderLeftTr_OneCell(
 		rho[1][0] = analytSolut( par_a, lbDom, rbDom, bbDom, ubDom, t, x, y );
 		x = indCurSqOx[1] * hx;
 		y = indCurSqOy[1] * hy;
+		
 		rho[1][1] = analytSolut( par_a, lbDom, rbDom, bbDom, ubDom, t, x, y );
+		
 	}
 
 	//   1.
@@ -169,6 +176,7 @@ double integUnderLeftTr_OneCell(
 	}
 	buf_D = buf_D - bufInteg_D /2.;
 	integ = buf_D * rho[0][0] /hx /hy;
+
 	//   2.
 	buf_D = (Qy - masOY[ indCurSqOy[1] ]) * (Qy - masOY[ indCurSqOy[1] ]) - (Py - masOY[ indCurSqOy[1] ]) * (Py - masOY[ indCurSqOy[1] ]);
 	if( (indCurSqOx[0] >= 0) && (indCurSqOy[1] >= 0) )
@@ -183,6 +191,7 @@ double integUnderLeftTr_OneCell(
 	}
 	buf_D = buf_D + bufInteg_D /2.;
 	integ = integ + buf_D * rho[1][0] /hx /hy;
+		    
 	//   3.
 	buf_D = (Qy - masOY[ indCurSqOy[0] ]) * (Qy - masOY[ indCurSqOy[0] ]) - (Py - masOY[ indCurSqOy[0] ]) * (Py - masOY[ indCurSqOy[0] ]);
 	if( (indCurSqOx[1] >= 0) && (indCurSqOy[0] >= 0) )
@@ -197,6 +206,7 @@ double integUnderLeftTr_OneCell(
 	}
 	buf_D = buf_D + bufInteg_D /2.;
 	integ = integ + buf_D * rho[0][1] /hx /hy;
+
 	//   4.
 	buf_D = (Qy - masOY[ indCurSqOy[0] ]) * (Qy - masOY[ indCurSqOy[0] ]) - (Py - masOY[ indCurSqOy[0] ]) * (Py - masOY[ indCurSqOy[0] ]);
 	if( (indCurSqOx[0] >= 0) && (indCurSqOy[0] >= 0) )
@@ -210,7 +220,16 @@ double integUnderLeftTr_OneCell(
 		bufInteg_D = itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[0], a_SL, b_SL, hx * indCurSqOx[0] );
 	}
 	buf_D = buf_D - bufInteg_D /2.;
-	return integ + buf_D * rho[1][1] /hx /hy;
+	/*if (iCurrTL == 2 && integUnderLeftTr_OneCell111)
+    {
+         printf("-14) cpu integ = %.16f buf_D = %.16f\n", integ, buf_D);
+         printf("-14) cpu rho[1][1] = %.16f hx = %.16f hy = %.16f\n", rho[1][1], hx, hy);
+
+         integUnderLeftTr_OneCell111 = false;
+    }*/
+	integ += buf_D * rho[1][1] /hx /hy;
+	
+	return integ;
 }
 
 double integUnderRightTr_OneCell(
@@ -369,6 +388,7 @@ double integUnderRectAng_OneCell(
 	return integ + buf_D * rho[1][1]; //   rhoInPrevTL[ indCurSqOx[1] ][ indCurSqOy[1] ];
 }
 
+bool d_integUnderRectAng_OneCell1 = true;
 
 double integOfChan_SLRightSd( //   -  The domain is Channel with Slant Line on the right side.
 	double par_a, //   -  Solution parameter.
@@ -549,8 +569,9 @@ double integOfChan_SLRightSd( //   -  The domain is Channel with Slant Line on t
 			numOfOYSt, //   -  Number of OY steps.
 			//
 			rhoInPrevTL_asV );
-
+		
 		integ += buf_D;
+	
 	}
 
 	//   B. Under triangle.
@@ -595,8 +616,15 @@ double integOfChan_SLRightSd( //   -  The domain is Channel with Slant Line on t
 				rhoInPrevTL_asV );
 
 			integ += buf_D;
+				if (iCurrTL == 2 && d_integUnderRectAng_OneCell1)
+            {
+                // printf("-6) cpu integ %.16f\n", integ);
+               // printf("-7) cpu buf_D %.16f\n", buf_D);
+                d_integUnderRectAng_OneCell1 = false;
+            }
 		}
 	}
+
 	return integ;
 }
 

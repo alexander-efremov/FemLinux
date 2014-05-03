@@ -112,10 +112,10 @@ __device__ double d_integUnderLeftTr_OneCell(
     }
 
     //   1.
-    buf_D = (Qy - masOY[ indCurSqOy[1] ]) * (Qy - masOY[ indCurSqOy[1] ])  -  (Py - masOY[ indCurSqOy[1] ]) * (Py - masOY[ indCurSqOy[1] ]);
+    buf_D = (Qy - c_h * indCurSqOy[1]) * (Qy - c_h * indCurSqOy[1])  -  (Py - c_h * indCurSqOy[1]) * (Py - c_h * indCurSqOy[1]);
     if(  (indCurSqOx[1] >= 0)  &&  (indCurSqOy[1] >= 0)  ) {
-        buf_D = buf_D  *  (Hx - masOX[ indCurSqOx[1] ])  *  (Hx - masOX[ indCurSqOx[1] ]) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, masOY[ indCurSqOy[1] ], a_SL, b_SL, masOX[ indCurSqOx[1] ] );
+        buf_D = buf_D  *  (Hx - c_h * indCurSqOx[1])  *  (Hx -  c_h *  indCurSqOx[1]) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[1], a_SL, b_SL, c_h *  indCurSqOx[1]  );
     } else {
         buf_D = buf_D  *  (Hx -   hx * indCurSqOx[1]  )  *  (Hx -   hx * indCurSqOx[1]  ) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[1], a_SL, b_SL,    hx * indCurSqOx[1]  );
@@ -125,10 +125,10 @@ __device__ double d_integUnderLeftTr_OneCell(
 
 
     //   2.
-    buf_D = (Qy - masOY[ indCurSqOy[1] ]) * (Qy - masOY[ indCurSqOy[1] ])  -  (Py - masOY[ indCurSqOy[1] ]) * (Py - masOY[ indCurSqOy[1] ]);
+    buf_D = (Qy - c_h * indCurSqOy[1]) * (Qy - c_h * indCurSqOy[1])  -  (Py - c_h * indCurSqOy[1]) * (Py - c_h *  indCurSqOy[1]);
     if(  (indCurSqOx[0] >= 0)  &&  (indCurSqOy[1] >= 0)  ) {
-        buf_D = -1. * buf_D  *  (Hx - masOX[ indCurSqOx[0] ])  *  (Hx - masOX[ indCurSqOx[0] ]) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, masOY[ indCurSqOy[1] ], a_SL, b_SL, masOX[ indCurSqOx[0] ] );
+        buf_D = -1. * buf_D  *  (Hx - c_h *  indCurSqOx[0])  *  (Hx - c_h *  indCurSqOx[0]) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[1], a_SL, b_SL, c_h * indCurSqOx[0] );
     } else {
         buf_D = -1. * buf_D  *  (Hx -   hx * indCurSqOx[0]  )  *  (Hx -   hx * indCurSqOx[0]  ) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[1], a_SL, b_SL,   hx * indCurSqOx[0]   );
@@ -138,10 +138,10 @@ __device__ double d_integUnderLeftTr_OneCell(
 
     
     //   3.
-    buf_D = (Qy - masOY[ indCurSqOy[0] ]) * (Qy - masOY[ indCurSqOy[0] ])  -  (Py - masOY[ indCurSqOy[0] ]) * (Py - masOY[ indCurSqOy[0] ]);
+    buf_D = (Qy - c_h *  indCurSqOy[0]) * (Qy - c_h * indCurSqOy[0])  -  (Py - c_h * indCurSqOy[0]) * (Py - c_h * indCurSqOy[0]);
     if(  (indCurSqOx[1] >= 0)  &&  (indCurSqOy[0] >= 0)  ) {
-        buf_D = -1. * buf_D  *  (Hx - masOX[ indCurSqOx[1] ])  *  (Hx - masOX[ indCurSqOx[1] ]) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, masOY[ indCurSqOy[0] ], a_SL, b_SL, masOX[ indCurSqOx[1] ] );
+        buf_D = -1. * buf_D  *  (Hx - c_h *  indCurSqOx[1])  *  (Hx - c_h * indCurSqOx[1]) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[0], a_SL, b_SL, c_h * indCurSqOx[1] );
     } else {
         buf_D = -1. * buf_D  *  (Hx -   hx * indCurSqOx[1]  )  *  (Hx -   hx * indCurSqOx[1]  ) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[0], a_SL, b_SL,   hx * indCurSqOx[1]   );
@@ -149,10 +149,10 @@ __device__ double d_integUnderLeftTr_OneCell(
     buf_D = buf_D  +  bufInteg_D /2.;
     integ = integ  +  buf_D * rho[0][1] /hx /hy;
     //   4.
-    buf_D = (Qy - masOY[ indCurSqOy[0] ]) * (Qy - masOY[ indCurSqOy[0] ])  -  (Py - masOY[ indCurSqOy[0] ]) * (Py - masOY[ indCurSqOy[0] ]);
+    buf_D = (Qy - c_h *  indCurSqOy[0]) * (Qy - c_h *  indCurSqOy[0])  -  (Py - c_h *  indCurSqOy[0]) * (Py - c_h * indCurSqOy[0]);
     if(  (indCurSqOx[0] >= 0)  &&  (indCurSqOy[0] >= 0)  ) {
-        buf_D = buf_D  *  (Hx - masOX[ indCurSqOx[0] ])  *  (Hx - masOX[ indCurSqOx[0] ]) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, masOY[ indCurSqOy[0] ], a_SL, b_SL, masOX[ indCurSqOx[0] ] );
+        buf_D = buf_D  *  (Hx - c_h *  indCurSqOx[0])  *  (Hx - c_h * indCurSqOx[0]) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[0], a_SL, b_SL, c_h * indCurSqOx[0] );
     } else {
         buf_D = buf_D  *  (Hx -   hx * indCurSqOx[0]  )  *  (Hx -   hx * indCurSqOx[0]  ) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[0], a_SL, b_SL,   hx * indCurSqOx[0]   );

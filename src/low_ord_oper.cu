@@ -72,41 +72,34 @@ __device__ double d_integUnderLeftTr_OneCell(
     //
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
-   
-    int numOfOXSt,                          //   -  Number of OX steps.
-   
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
     double * rhoInPrevTL_asV )
 {
-    double hx = c_h*1 - c_h*0;
-    double hy = c_h*1 - c_h*0;
     double integ = 0;
     double buf_D, bufInteg_D;
     double rho[2][2];
     double t = c_tau * (iCurrTL - 1.);
     double x, y;
-    if(  (indCurSqOx[0] >=0)  &&  (indCurSqOx[1] <=numOfOXSt)  ) {
-        if(  (indCurSqOy[0] >=0)  &&  (indCurSqOy[1] <=numOfOYSt)  ) {
+    if(  (indCurSqOx[0] >=0)  &&  (indCurSqOx[1] <= c_x_length)  ) {
+        if(  (indCurSqOy[0] >=0)  &&  (indCurSqOy[1] <=c_y_length)  ) {
 
-            rho[0][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0]) ];
-            rho[0][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0]) ];
-            rho[1][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1]) ];
-            rho[1][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1]) ];
+            rho[0][0] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[0] + indCurSqOx[0]) ];
+            rho[0][1] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[1] + indCurSqOx[0]) ];
+            rho[1][0] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[0] + indCurSqOx[1]) ];
+            rho[1][1] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[1] + indCurSqOx[1]) ];
         }
     }
-    if(  (indCurSqOx[0] < 0)  ||  (indCurSqOx[1] > numOfOXSt)  ||  (indCurSqOy[0] < 0)  ||  (indCurSqOy[1] > numOfOYSt)  ) {
-        x = indCurSqOx[0] * hx;
-        y = indCurSqOy[0] * hy;
+    if(  (indCurSqOx[0] < 0)  ||  (indCurSqOx[1] > c_x_length)  ||  (indCurSqOy[0] < 0)  ||  (indCurSqOy[1] > c_y_length)  ) {
+        x = indCurSqOx[0] * c_h;
+        y = indCurSqOy[0] * c_h;
         rho[0][0]  =  d_analytSolut(t, x, y );
-        x = indCurSqOx[0] * hx;
-        y = indCurSqOy[1] * hy;
+        x = indCurSqOx[0] * c_h;
+        y = indCurSqOy[1] * c_h;
         rho[0][1]  =  d_analytSolut(t, x, y );
-        x = indCurSqOx[1] * hx;
-        y = indCurSqOy[0] * hy;
+        x = indCurSqOx[1] * c_h;
+        y = indCurSqOy[0] * c_h;
         rho[1][0]  =  d_analytSolut(t, x, y );
-        x = indCurSqOx[1] * hx;
-        y = indCurSqOy[1] * hy;
+        x = indCurSqOx[1] * c_h;
+        y = indCurSqOy[1] * c_h;
         
         rho[1][1]  =  d_analytSolut(t, x, y );
     }
@@ -117,11 +110,11 @@ __device__ double d_integUnderLeftTr_OneCell(
         buf_D = buf_D  *  (Hx - c_h * indCurSqOx[1])  *  (Hx -  c_h *  indCurSqOx[1]) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[1], a_SL, b_SL, c_h *  indCurSqOx[1]  );
     } else {
-        buf_D = buf_D  *  (Hx -   hx * indCurSqOx[1]  )  *  (Hx -   hx * indCurSqOx[1]  ) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[1], a_SL, b_SL,    hx * indCurSqOx[1]  );
+        buf_D = buf_D  *  (Hx -   c_h * indCurSqOx[1]  )  *  (Hx -   c_h * indCurSqOx[1]  ) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[1], a_SL, b_SL,    c_h * indCurSqOx[1]  );
     }
     buf_D = buf_D  -  bufInteg_D /2.;
-    integ = buf_D * rho[0][0] /hx /hy;
+    integ = buf_D * rho[0][0] /c_h /c_h;
 
 
     //   2.
@@ -130,11 +123,11 @@ __device__ double d_integUnderLeftTr_OneCell(
         buf_D = -1. * buf_D  *  (Hx - c_h *  indCurSqOx[0])  *  (Hx - c_h *  indCurSqOx[0]) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[1], a_SL, b_SL, c_h * indCurSqOx[0] );
     } else {
-        buf_D = -1. * buf_D  *  (Hx -   hx * indCurSqOx[0]  )  *  (Hx -   hx * indCurSqOx[0]  ) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[1], a_SL, b_SL,   hx * indCurSqOx[0]   );
+        buf_D = -1. * buf_D  *  (Hx -   c_h * indCurSqOx[0]  )  *  (Hx -   c_h * indCurSqOx[0]  ) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[1], a_SL, b_SL,  c_h * indCurSqOx[0]   );
     }
     buf_D = buf_D  +  bufInteg_D /2.;
-    integ = integ  +  buf_D * rho[1][0] /hx /hy;
+    integ = integ  +  buf_D * rho[1][0] /c_h /c_h;
 
     
     //   3.
@@ -143,22 +136,22 @@ __device__ double d_integUnderLeftTr_OneCell(
         buf_D = -1. * buf_D  *  (Hx - c_h *  indCurSqOx[1])  *  (Hx - c_h * indCurSqOx[1]) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[0], a_SL, b_SL, c_h * indCurSqOx[1] );
     } else {
-        buf_D = -1. * buf_D  *  (Hx -   hx * indCurSqOx[1]  )  *  (Hx -   hx * indCurSqOx[1]  ) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[0], a_SL, b_SL,   hx * indCurSqOx[1]   );
+        buf_D = -1. * buf_D  *  (Hx -   c_h * indCurSqOx[1]  )  *  (Hx -   c_h * indCurSqOx[1]  ) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[0], a_SL, b_SL,   c_h * indCurSqOx[1]   );
     }
     buf_D = buf_D  +  bufInteg_D /2.;
-    integ = integ  +  buf_D * rho[0][1] /hx /hy;
+    integ = integ  +  buf_D * rho[0][1] /c_h /c_h;
     //   4.
     buf_D = (Qy - c_h *  indCurSqOy[0]) * (Qy - c_h *  indCurSqOy[0])  -  (Py - c_h *  indCurSqOy[0]) * (Py - c_h * indCurSqOy[0]);
     if(  (indCurSqOx[0] >= 0)  &&  (indCurSqOy[0] >= 0)  ) {
         buf_D = buf_D  *  (Hx - c_h *  indCurSqOx[0])  *  (Hx - c_h * indCurSqOx[0]) /4.;
         bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[0], a_SL, b_SL, c_h * indCurSqOx[0] );
     } else {
-        buf_D = buf_D  *  (Hx -   hx * indCurSqOx[0]  )  *  (Hx -   hx * indCurSqOx[0]  ) /4.;
-        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, hy * indCurSqOy[0], a_SL, b_SL,   hx * indCurSqOx[0]   );
+        buf_D = buf_D  *  (Hx -   c_h * indCurSqOx[0]  )  *  (Hx -   c_h * indCurSqOx[0]  ) /4.;
+        bufInteg_D = d_itemOfInteg_2SpecType( Py, Qy, c_h * indCurSqOy[0], a_SL, b_SL,   c_h * indCurSqOx[0]   );
     }
     buf_D = buf_D  -  bufInteg_D /2.;
-    integ +=  buf_D * rho[1][1] /hx /hy;
+    integ +=  buf_D * rho[1][1] /c_h /c_h;
     
     return integ;
 }
@@ -174,11 +167,7 @@ __device__ double d_integUnderRightTr_OneCell(
     //
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
-    
-    int numOfOXSt,                          //   -  Number of OX steps.
      
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
     double * rhoInPrevTL_asV )
 {
     return -1. * d_integUnderLeftTr_OneCell( 
@@ -191,10 +180,7 @@ __device__ double d_integUnderRightTr_OneCell(
                indCurSqOx,                             //   -  Index of current square by Ox axis.
                indCurSqOy,                             //   -  Index of current square by Oy axis.
                //
-                 numOfOXSt,                       //   -  Massive of OX steps. Dimension = numOfOXSt +1. Number of OX steps.
-               //
-                 numOfOYSt,                       //   -  Massive of OY steps. Dimension = numOfOYSt +1. Number of OY steps.
-               //
+                
                rhoInPrevTL_asV );
 }
 
@@ -210,14 +196,9 @@ __device__ double d_integUnderRectAng_OneCell(
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
     
-    int numOfOXSt,                          //   -  Number of OX steps.
-    
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
+  
     double * rhoInPrevTL_asV )
-{
-    double hx = c_h*1 - c_h*0;
-    double hy = c_h*1 - c_h*0;
+{   
     double integ = 0;
     double buf_D;
     double rho[2][2];
@@ -225,52 +206,52 @@ __device__ double d_integUnderRectAng_OneCell(
     double x, y;
     if(   (indCurSqOx[0] >=0) && (indCurSqOy[0] >=0)  ) {
         
-            rho[0][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[0])  ];
-            rho[0][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[0]) ];
-            rho[1][0] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[0] + indCurSqOx[1])  ];
-            rho[1][1] = rhoInPrevTL_asV[ ((numOfOXSt +1)*indCurSqOy[1] + indCurSqOx[1])  ];
+            rho[0][0] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[0] + indCurSqOx[0])  ];
+            rho[0][1] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[1] + indCurSqOx[0]) ];
+            rho[1][0] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[0] + indCurSqOx[1])  ];
+            rho[1][1] = rhoInPrevTL_asV[ ((c_x_length +1)*indCurSqOy[1] + indCurSqOx[1])  ];
     } else {
-        x = indCurSqOx[0] * hx;
-        y = indCurSqOy[0] * hy;
+        x = indCurSqOx[0] * c_h;
+        y = indCurSqOy[0] * c_h;
         rho[0][0]  =  d_analytSolut(t, x, y );
-        x = indCurSqOx[0] * hx;
-        y = indCurSqOy[1] * hy;
+        x = indCurSqOx[0] * c_h;
+        y = indCurSqOy[1] * c_h;
         rho[0][1]  =  d_analytSolut(t, x, y );
-        x = indCurSqOx[1] * hx;
-        y = indCurSqOy[0] * hy;
+        x = indCurSqOx[1] * c_h;
+        y = indCurSqOy[0] * c_h;
         rho[1][0]  =  d_analytSolut(t, x, y );
-        x = indCurSqOx[1] * hx;
-        y = indCurSqOy[1] * hy;
+        x = indCurSqOx[1] * c_h;
+        y = indCurSqOy[1] * c_h;
         rho[1][1]  =  d_analytSolut(t, x, y );
     }
 
     if(   (indCurSqOx[1] >= 0) && (indCurSqOy[1] >= 0)   ) {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h * indCurSqOx[1],  c_h * indCurSqOy[1] );
     } else {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx *indCurSqOx[1]   , hy * indCurSqOy[1] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   c_h *indCurSqOx[1]   , c_h * indCurSqOy[1] );
     }
-    buf_D = buf_D  /hx /hy;
+    buf_D = buf_D  /c_h /c_h;
     integ = buf_D * rho[0][0];                            //   rhoInPrevTL[ indCurSqOx[0] ][ indCurSqOy[0] ];
     if(   (indCurSqOx[0] >= 0)  &&   (indCurSqOy[1] >= 0)   ) {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h *indCurSqOx[0] , c_h * indCurSqOy[1]  );
     } else {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx * indCurSqOx[0]  , hy * indCurSqOy[1] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   c_h * indCurSqOx[0]  , c_h * indCurSqOy[1] );
     }
-    buf_D = buf_D  /hx /hy;
+    buf_D = buf_D  /c_h /c_h;
     integ = integ - buf_D * rho[1][0];                    //   rhoInPrevTL[ indCurSqOx[1] ][ indCurSqOy[0] ];
     if(   (indCurSqOx[1] >= 0)  &&  (indCurSqOy[0] >= 0)   ) {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h * indCurSqOx[1] , c_h * indCurSqOy[0]  );
     } else {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx * indCurSqOx[1]  , hy * indCurSqOy[0] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   c_h * indCurSqOx[1]  , c_h * indCurSqOy[0] );
     }
-    buf_D = buf_D  /hx /hy;
+    buf_D = buf_D  /c_h /c_h;
     integ = integ - buf_D * rho[0][1];                    //   rhoInPrevTL[ indCurSqOx[0] ][ indCurSqOy[1] ];
     if(   (indCurSqOx[0] >= 0)  &&  (indCurSqOy[0] >= 0)   ) {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h *indCurSqOx[0], c_h * indCurSqOy[0] );
     } else {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx * indCurSqOx[0]  , hy * indCurSqOy[0] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   c_h * indCurSqOx[0]  , c_h * indCurSqOy[0] );
     }
-    buf_D = buf_D  /hx /hy;
+    buf_D = buf_D  /c_h /c_h;
    
 
     return integ + buf_D * rho[1][1];                    //   rhoInPrevTL[ indCurSqOx[1] ][ indCurSqOy[1] ];
@@ -287,11 +268,7 @@ __device__ double d_integOfChan_SLRightSd(
     double lb,  int * indLB,                //   -  Left boundary by Ox. Index by OX axis where lb is.
     //
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
-     
-    int numOfOXSt,                          //   -  Number of OX steps.
     
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
     double * rhoInPrevTL_asV )
 {
     double mv[2], rv[2];                                  //   -  Middle and right vertices.
@@ -329,7 +306,7 @@ __device__ double d_integOfChan_SLRightSd(
     }
 
 
-//   First step: from "lb" to "masOX[ indCurSqOx[0] ]" by iteration.
+//   First step: from "lb" to "mas OX[ indCurSqOx[0] ]" by iteration.
 //   integ  += fabs( mv[0] - lb) * fabs(uv[1] - bv[1]);
 
     indCurSqOxToCh[0]  =  indLB[0];
@@ -363,11 +340,7 @@ __device__ double d_integOfChan_SLRightSd(
                     //
                     indCurSqOxToCh,                         //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
-                    
-                    numOfOXSt,                              //   -  Number of OX steps.
-                   
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
+                 
                     rhoInPrevTL_asV );
         
         integ += buf_D;
@@ -406,11 +379,7 @@ __device__ double d_integOfChan_SLRightSd(
                     //
                     indCurSqOx,                             //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
-                   
-                    numOfOXSt,                              //   -  Number of OX steps.
-                   
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
+                    
                     rhoInPrevTL_asV );
         
         integ += buf_D;
@@ -442,10 +411,7 @@ __device__ double d_integOfChan_SLRightSd(
                         indCurSqOx,                             //   -  Index of current square by Ox axis.
                         indCurSqOy,                             //   -  Index of current square by Oy axis.
                          
-                        numOfOXSt,                              //   -  Number of OX steps.
                         
-                        numOfOYSt,                              //   -  Number of OY steps.
-                        //
                         rhoInPrevTL_asV );
             
             integ += buf_D;
@@ -466,10 +432,6 @@ __device__ double d_integOfChan_SLLeftSd(
     //
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
     
-    int numOfOXSt,                          //   -  Number of OX steps.
-    
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
     double * rhoInPrevTL_asV )
 {
     double lv[2], mv[2];                                  //   -  Left and middle vertices.
@@ -530,10 +492,6 @@ __device__ double d_integOfChan_SLLeftSd(
                         indCurSqOx,                             //   -  Index of current square by Ox axis.
                         indCurSqOy,                             //   -  Index of current square by Oy axis.
                          
-                        numOfOXSt,                              //   -  Number of OX steps.
-                         
-                        numOfOYSt,                              //   -  Number of OY steps.
-                        //
                         rhoInPrevTL_asV );
             integ += buf_D;
         }
@@ -569,16 +527,13 @@ __device__ double d_integOfChan_SLLeftSd(
                     indCurSqOx,                             //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
                     
-                    numOfOXSt,                              //   -  Number of OX steps.
-                  
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
+                    
                     rhoInPrevTL_asV );
 
         integ += buf_D;
     }
 
-//   Second step: from "masOX[ indCurSqOx[1] ]" to "rb" by iteration.
+//   Second step: from "mas OX[ indCurSqOx[1] ]" to "rb" by iteration.
 
 
     indCurSqOxToCh[0]  =  indCurSqOx[0] +1;
@@ -617,10 +572,6 @@ __device__ double d_integOfChan_SLLeftSd(
                     indCurSqOxToCh,                         //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
                    
-                    numOfOXSt,                              //   -  Number of OX steps.
-                   
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
                     rhoInPrevTL_asV );
 
         integ += buf_D;
@@ -637,11 +588,7 @@ __device__ double d_integUnderRigAngTr_BottLeft(
     //
     double *bv,
     double *uv,
-   
-    int numOfOXSt,                          //   -  Number of OX steps.
     
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
     double * rhoInPrevTL_asV )
 {
     double trPC[2];                                       //   -  Travel point current;
@@ -653,8 +600,6 @@ __device__ double d_integUnderRigAngTr_BottLeft(
     int indRB[2];                                         //   -  Index of right boundary.
     double distOx, distOy;                                //   -  Distance to near Ox and Oy straight lines.
     bool isTrDone = false;                                //   -  Is travel done.
-    double hx = c_h*1 - c_h*0;
-    double hy = c_h*1 - c_h*0;
     double integOfBottTr = 0.;                            //   -  Value which we are computing.
     double buf_D;
     //   Initial data.
@@ -669,14 +614,14 @@ __device__ double d_integUnderRigAngTr_BottLeft(
         //   This triangle has very small height. I guess further computation isn't correct.
         return fabs(ang);
     }
-    indCurSqOx[0] = (int)(  (trPC[0] - 1.e-14) /hx);      //   -  If trPC[0] is in grid edge I want it will be between in the left side of indCurSqOx[1].
+    indCurSqOx[0] = (int)(  (trPC[0] - 1.e-14) /c_h);      //   -  If trPC[0] is in grid edge I want it will be between in the left side of indCurSqOx[1].
     if( (trPC[0] - 1.e-14) <= 0 ) {
         indCurSqOx[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
     }
     indCurSqOx[1] = indCurSqOx[0] +1;                     //   -  It's important only in rare case then trPC is in grid edge.
     indRB[0] = indCurSqOx[0];
     indRB[1] = indRB[0] +1;
-    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /hy);      //   -  If trPC[1] is in grid edge I want it will be between indCurSqOx[0] and indCurSqOx[1].
+    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /c_h);      //   -  If trPC[1] is in grid edge I want it will be between indCurSqOx[0] and indCurSqOx[1].
     if( (trPC[1] + 1.e-14) <= 0 ) {
         indCurSqOy[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
     }
@@ -685,13 +630,13 @@ __device__ double d_integUnderRigAngTr_BottLeft(
         distOx = trPC[0]  -  c_h * indCurSqOx[0] ;
     }
     if( indCurSqOx[0] < 0 ) {
-        distOx = fabs( trPC[0]  -  hx * indCurSqOx[0] );
+        distOx = fabs( trPC[0]  -  c_h * indCurSqOx[0] );
     }
     if( indCurSqOy[1] >= 0 ) {
         distOy = c_h * indCurSqOy[1]  -  trPC[1];
     }
     if( indCurSqOy[1] < 0 ) {
-        distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+        distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
     }
     do {
         //   a. First case.
@@ -702,7 +647,7 @@ __device__ double d_integUnderRigAngTr_BottLeft(
                 trPN[1] = c_h * indCurSqOy[1];
             }
             if( indCurSqOy[1] < 0) {
-                trPN[1] = hy * indCurSqOy[1];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             trPN[0] = bv[0] - (trPN[1] - bv[1]) /ang;
         }
@@ -714,7 +659,7 @@ __device__ double d_integUnderRigAngTr_BottLeft(
                 trPN[0]  =  c_h * indCurSqOx[0];
             }
             if( indCurSqOx[0] < 0 ) {
-                trPN[0]  =  hx * indCurSqOx[0];
+                trPN[0]  =  c_h * indCurSqOx[0];
             }
             trPN[1]  =  bv[1]  -  ang * (trPN[0] - bv[0]);
         }
@@ -737,11 +682,7 @@ __device__ double d_integUnderRigAngTr_BottLeft(
                     bv[0], indRB,                           //   -  double rb  =  Right boundary by Ox.
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
-                    
-                    numOfOXSt,                              //   -  Number of OX steps.
                    
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
                     rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr + buf_D;
         //   e. Updating.
@@ -762,13 +703,13 @@ __device__ double d_integUnderRigAngTr_BottLeft(
                 distOx = trPC[0]  -  c_h *  indCurSqOx[0] ;
             }
             if( indCurSqOx[0] < 0) {
-                distOx = fabs( trPC[0]  -  hx * indCurSqOx[0] );
+                distOx = fabs( trPC[0]  -  c_h * indCurSqOx[0] );
             }
             if( indCurSqOy[1] >= 0 ) {
                 distOy = c_h *  indCurSqOy[1]  -  trPC[1];
             }
             if( indCurSqOy[1] < 0 ) {
-                distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+                distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
             }
         }
     } while( !isTrDone );
@@ -780,11 +721,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
     //
     double *bv,
     double *uv,
-  
-    int numOfOXSt,                          //   -  Number of OX steps.
-    
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
+   
     double * rhoInPrevTL_asV )
 {
     double trPC[2];                                       //   -  Travel point current;
@@ -796,8 +733,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
     int indLB[2];                                         //   -  Index of left boundary.
     double distOx, distOy;                                //   -  Distance to near Ox and Oy straight lines.
     bool isTrDone = false;                                //   -  Is travel done.
-    double hx = c_h;
-    double hy = c_h;
+    
     double integOfBottTr = 0.;                            //   -  Value which we are computing.
     double buf_D;
 
@@ -809,14 +745,14 @@ __device__ double d_integUnderRigAngTr_BottRight(
     ang = (uv[1] - bv[1]) / (uv[0] - bv[0]);
     if(  fabs(ang)  <  1.e-12  ) return fabs(ang);
 
-    indCurSqOx[0] = (int)(  (trPC[0] + 1.e-14) /hx);      //   -  If trPC[0] is in grid edge I want it will be between in the right side.
+    indCurSqOx[0] = (int)(  (trPC[0] + 1.e-14) /c_h);      //   -  If trPC[0] is in grid edge I want it will be between in the right side.
 
     if( (trPC[0] + 1.e-14) <= 0 )  indCurSqOx[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
 
     indCurSqOx[1] = indCurSqOx[0] +1;                     //   -  It's important only in rare case then trPC is in grid edge.
     indLB[0] = indCurSqOx[0];
     indLB[1] = indLB[0] +1;
-    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /hy);      //   -  If trPC[1] is in grid edge I want it will be in the upper side.
+    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /c_h);      //   -  If trPC[1] is in grid edge I want it will be in the upper side.
     if( (trPC[1] + 1.e-14) <= 0 ) {
         indCurSqOy[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
     }
@@ -826,13 +762,13 @@ __device__ double d_integUnderRigAngTr_BottRight(
         distOx = fabs( c_h * indCurSqOx[1]  -  trPC[0] );
     }
     if( indCurSqOx[1] < 0 ) {
-        distOx = fabs( hx * indCurSqOx[1]  -  trPC[0] );
+        distOx = fabs( c_h * indCurSqOx[1]  -  trPC[0] );
     }
     if( indCurSqOy[1] >=0 ) {
         distOy = fabs( c_h * indCurSqOy[1]   -  trPC[1] );
     }
     if( indCurSqOy[1] < 0 ) {
-        distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+        distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
     }
     do {
         //   a. First case.
@@ -843,7 +779,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
                 trPN[1] = c_h * indCurSqOy[1];
             }
             if( indCurSqOy[1] < 0 ) {
-                trPN[1] = hy * indCurSqOy[1];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             trPN[0] = bv[0] + (trPN[1] - bv[1]) /ang;
         }
@@ -855,7 +791,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
                 trPN[0]  =  c_h * indCurSqOx[1];
             }
             if( indCurSqOx[1]  < 0 ) {
-                trPN[0]  =  hx * indCurSqOx[1];
+                trPN[0]  =  c_h * indCurSqOx[1];
             }
             trPN[1]  =  bv[1]  +  ang * (trPN[0] - bv[0]);
         }
@@ -879,10 +815,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
                     
-                    numOfOXSt,                              //   -  Number of OX steps.
-                    
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
+                  
                     rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr + buf_D;
         //   e. Updating.
@@ -903,13 +836,13 @@ __device__ double d_integUnderRigAngTr_BottRight(
                 distOx = fabs( c_h * indCurSqOx[1]   -  trPC[0] );
             }
             if( indCurSqOx[1] < 0 ) {
-                distOx = fabs( hx * indCurSqOx[1]  -  trPC[0] );
+                distOx = fabs( c_h * indCurSqOx[1]  -  trPC[0] );
             }
             if( indCurSqOy[1] >=0 ) {
                 distOy = fabs( c_h * indCurSqOy[1]   -  trPC[1] );
             }
             if( indCurSqOy[1] < 0 ) {
-                distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+                distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
             }
         }
     } while( !isTrDone );
@@ -922,13 +855,7 @@ __device__ double d_integUnderBottTr(
     double * LvBt,                          //   -  Left, Right and Botton vertices of Botton triangle.
     double * RvBt,                          //   -  Left, Right and Botton vertices of Botton triangle.
     double * BvBt,                          //   -  Left, Right and Botton vertices of Botton triangle.
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-    int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
+    
     double * rhoInPrevTL_asV,
     int ii, int jj ) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
@@ -940,12 +867,12 @@ __device__ double d_integUnderBottTr(
         buf_D = d_integUnderRigAngTr_BottRight(
                        iCurrTL,
                     //
-                    BvBt, RvBt,   numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, RvBt,      rhoInPrevTL_asV );
         integOfBottTr = buf_D;
         buf_D = d_integUnderRigAngTr_BottRight(
                      iCurrTL,
                     //
-                    BvBt, LvBt,    numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, LvBt,      rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
 
 //      printf("Bv<Lv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -958,13 +885,13 @@ __device__ double d_integUnderBottTr(
         buf_D = d_integUnderRigAngTr_BottLeft(
                iCurrTL,
                     //
-                    BvBt, LvBt,     numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, LvBt,         rhoInPrevTL_asV );
         integOfBottTr = buf_D;
 
         buf_D = d_integUnderRigAngTr_BottRight(
                      iCurrTL,
                     //
-                    BvBt, RvBt,     numOfOXSt,  numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, RvBt,         rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr + buf_D;
 
 //      printf("Bv>Lv & Bv<Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -977,12 +904,12 @@ __device__ double d_integUnderBottTr(
         buf_D = d_integUnderRigAngTr_BottLeft(
                iCurrTL,
                     //
-                    BvBt, LvBt,    numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, LvBt,        rhoInPrevTL_asV );
         integOfBottTr = buf_D;
         buf_D = d_integUnderRigAngTr_BottLeft(
                  iCurrTL,
                     //
-                    BvBt, RvBt,     numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, RvBt,       rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
 
 //      printf("Bv>Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -997,13 +924,7 @@ __device__ double d_integUnderRigAngTr_UppLeft(
     //
     double *bv,
     double *uv,
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-    int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
+     
     double * rhoInPrevTL_asV )
 {
     //   return ( fabs( (uv[1] - bv[1]) * (bv[0] - uv[0]) /2.) );
@@ -1016,8 +937,7 @@ __device__ double d_integUnderRigAngTr_UppLeft(
     int indRB[2];                                         //   -  Index of right boundary.
     double distOx, distOy;                                //   -  Distance to near Ox and Oy straight lines.
     bool isTrDone = false;                                //   -  Is travel done.
-    double hx = c_h;
-    double hy = c_h;
+    
     double integOfUppTr = 0.;                             //   -  Value which we are computing.
     double buf_D;
     //   Initial data.
@@ -1029,32 +949,32 @@ __device__ double d_integUnderRigAngTr_UppLeft(
     if(  fabs(ang)  <  1.e-12  ) return fabs(ang);
 
     //   The follow equations are quite important.
-    indCurSqOx[0] = (int)(  (trPC[0] + 1.e-14) /hx);      //   -  If trPC[0] is in grid edge I want it will be in the right side.
+    indCurSqOx[0] = (int)(  (trPC[0] + 1.e-14) /c_h);      //   -  If trPC[0] is in grid edge I want it will be in the right side.
     if( (trPC[0] + 1.e-14) <= 0 ) {
         indCurSqOx[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
     }
     indCurSqOx[1] = indCurSqOx[0] +1;                     //   -  It's important only in rare case then trPC is in grid edge.
-    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /hy);      //   -  If trPC[1] is in grid edge I want it will be in the upper square.
+    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /c_h);      //   -  If trPC[1] is in grid edge I want it will be in the upper square.
     if( (trPC[1] + 1.e-14) <= 0 ) {
         indCurSqOy[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
     }
     indCurSqOy[1] = indCurSqOy[0] +1;
-    indRB[0] = (int)(  (uv[0] - 1.e-14) /hy);             //   -  If uv[0] is in grid edge I want it will be in the left side.
+    indRB[0] = (int)(  (uv[0] - 1.e-14) /c_h);             //   -  If uv[0] is in grid edge I want it will be in the left side.
     if( (uv[0] - 1.e-14) <= 0 ) {
         indRB[0] -= 1;     //   -  The case when "trPC[0]" ia negative.
     }
     indRB[1] = indRB[0] +1;
     if( indCurSqOx[1] >= 0) {
-        distOx = masOX[ indCurSqOx[1] ]  -  trPC[0];
+        distOx = c_h * indCurSqOx[1]  -  trPC[0];
     }
     if( indCurSqOx[1] < 0) {
-        distOx = fabs( hx * indCurSqOx[1]  -  trPC[0] );
+        distOx = fabs( c_h * indCurSqOx[1]  -  trPC[0] );
     }
     if( indCurSqOy[1] >= 0 ) {
-        distOy = masOY[ indCurSqOy[1] ]  -  trPC[1];
+        distOy = c_h * indCurSqOy[1]  -  trPC[1];
     }
     if( indCurSqOy[1] < 0 ) {
-        distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+        distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
     }
     do {
         //   a. First case.
@@ -1062,10 +982,10 @@ __device__ double d_integUnderRigAngTr_UppLeft(
             //   Across with straight line parallel Ox axis.
             wTrPNI = 1;
             if( indCurSqOy[1] >= 0 ) {
-                trPN[1] = masOY[ indCurSqOy[1] ];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             if( indCurSqOy[1] < 0 ) {
-                trPN[1] = hy * indCurSqOy[1];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             trPN[0] = bv[0] + (trPN[1] - bv[1]) /ang;
         }
@@ -1074,10 +994,10 @@ __device__ double d_integUnderRigAngTr_UppLeft(
             //   Across with straight line parallel Oy axis.
             wTrPNI = 2;
             if( indCurSqOx[1] >= 0 ) {
-                trPN[0]  =  masOX[ indCurSqOx[1] ];
+                trPN[0]  =  c_h * indCurSqOx[1];
             }
             if( indCurSqOx[1] < 0 ) {
-                trPN[0]  =  hx * indCurSqOx[1];
+                trPN[0]  =  c_h * indCurSqOx[1];
             }
             trPN[1]  =  bv[1]  +  ang * (trPN[0] - bv[0]);
         }
@@ -1101,10 +1021,7 @@ __device__ double d_integUnderRigAngTr_UppLeft(
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
                     
-                    numOfOXSt,                              //   -  Number of OX steps.
                     
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
                     rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr + buf_D;
         //   e. Updating.
@@ -1122,16 +1039,16 @@ __device__ double d_integUnderRigAngTr_UppLeft(
                 indCurSqOx[1] += 1;
             }
             if( indCurSqOx[1] >= 0) {
-                distOx = fabs( masOX[ indCurSqOx[1] ]  -  trPC[0] );
+                distOx = fabs( c_h * indCurSqOx[1]  -  trPC[0] );
             }
             if( indCurSqOx[1] < 0) {
-                distOx = fabs( hx * indCurSqOx[1]  -  trPC[0] );
+                distOx = fabs( c_h * indCurSqOx[1]  -  trPC[0] );
             }
             if( indCurSqOy[1] >= 0 ) {
-                distOy = fabs( masOY[ indCurSqOy[1] ]  -  trPC[1] );
+                distOy = fabs( c_h * indCurSqOy[1] -  trPC[1] );
             }
             if( indCurSqOy[1] < 0 ) {
-                distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+                distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
             }
         }
     } while( !isTrDone );
@@ -1142,14 +1059,7 @@ __device__ double d_integUnderRigAngTr_UppRight(
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double *bv,
-    double *uv,
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-    int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
+    double *uv, 
     double * rhoInPrevTL_asV )
 {
     //   return ( fabs( (uv[1] - bv[1]) * (bv[0] - uv[0]) /2.) );
@@ -1162,8 +1072,7 @@ __device__ double d_integUnderRigAngTr_UppRight(
     int indLB[2];                                         //   -  Index of left boundary.
     double distOx, distOy;                                //   -  Distance to near Ox and Oy straight lines.
     bool isTrDone = false;                                //   -  Is travel done.
-    double hx = masOX[1] - masOX[0];
-    double hy = masOY[1] - masOY[0];
+    
     double integOfUppTr = 0.;                             //   -  Value which we are computing.
     double buf_D;
     //   Initial data.
@@ -1178,32 +1087,32 @@ __device__ double d_integUnderRigAngTr_UppRight(
         //   This triangle has very small height. I guess further computation isn't correct.
         return fabs(ang);
     }
-    indCurSqOx[0] = (int)(  (trPC[0] - 1.e-14) /hx);      //   -  If trPC[0] is in grid edge I want it will be between in the left side.
+    indCurSqOx[0] = (int)(  (trPC[0] - 1.e-14) /c_h);      //   -  If trPC[0] is in grid edge I want it will be between in the left side.
     if( (trPC[0] - 1.e-14) <= 0 ) {
         indCurSqOx[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
     }
     indCurSqOx[1] = indCurSqOx[0] +1;                     //   -  It's important only in rare case then trPC is in grid edge.
-    indLB[0] = (int)( (uv[0] + 1.e-14) /hx);
+    indLB[0] = (int)( (uv[0] + 1.e-14) /c_h);
     if( (uv[0] + 1.e-14) <=0 ) {
         indLB[0] -= 1;     //   -  The case when "trPC[0]" ia negative.
     }
     indLB[1] = indLB[0] +1;
-    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /hy);      //   -  If trPC[1] is in grid edge I want it will be in the upper side.
+    indCurSqOy[0] = (int)(  (trPC[1] + 1.e-14) /c_h);      //   -  If trPC[1] is in grid edge I want it will be in the upper side.
     if( (trPC[1] + 1.e-14) <= 0 ) {
         indCurSqOy[0] -= 1;    //   -  The case when "trPC[0]" ia negative.
     }
     indCurSqOy[1] = indCurSqOy[0] +1;                     //   -  It's important only in rare case then trPC is in grid edge.
     if( indCurSqOx[0] >= 0 ) {
-        distOx = fabs( trPC[0]  -  masOX[ indCurSqOx[0] ] );
+        distOx = fabs( trPC[0]  -  c_h * indCurSqOx[0] );
     }
     if( indCurSqOx[0] < 0 ) {
-        distOx = fabs( trPC[0]  -  hx * indCurSqOx[0] );
+        distOx = fabs( trPC[0]  -  c_h * indCurSqOx[0] );
     }
     if( indCurSqOy[1] >= 0 ) {
-        distOy = fabs( masOY[ indCurSqOy[1] ]  -  trPC[1] );
+        distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
     }
     if( indCurSqOy[1] < 0 ) {
-        distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+        distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
     }
     do {
         //   a. First case.
@@ -1211,10 +1120,10 @@ __device__ double d_integUnderRigAngTr_UppRight(
             //   Across with straight line parallel Ox axis.
             wTrPNI = 1;
             if( indCurSqOy[1] >= 0 ) {
-                trPN[1] = masOY[ indCurSqOy[1] ];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             if( indCurSqOy[1] < 0 ) {
-                trPN[1] = hy * indCurSqOy[1];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             trPN[0] = bv[0] - (trPN[1] - bv[1]) /ang;
         }
@@ -1223,10 +1132,10 @@ __device__ double d_integUnderRigAngTr_UppRight(
             //   Across with straight line parallel Oy axis.
             wTrPNI = 2;
             if( indCurSqOx[0] >= 0 ) {
-                trPN[0]  =  masOX[ indCurSqOx[0] ];
+                trPN[0]  =  c_h * indCurSqOx[0];
             }
             if( indCurSqOx[0] < 0 ) {
-                trPN[0]  =  hx * indCurSqOx[0];
+                trPN[0]  =  c_h * indCurSqOx[0];
             }
             trPN[1]  =  bv[1]  -  ang * (trPN[0] - bv[0]);
         }
@@ -1250,10 +1159,7 @@ __device__ double d_integUnderRigAngTr_UppRight(
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
                     
-                    numOfOXSt,                              //   -  Number of OX steps.
-                     
-                    numOfOYSt,                              //   -  Number of OY steps.
-                    //
+                    
                     rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr + buf_D;
         //   e. Updating.
@@ -1271,16 +1177,16 @@ __device__ double d_integUnderRigAngTr_UppRight(
                 indCurSqOx[1] -= 1;
             }
             if( indCurSqOx[0] >= 0 ) {
-                distOx = fabs( trPC[0]  -  masOX[ indCurSqOx[0] ] );
+                distOx = fabs( trPC[0]  - c_h * indCurSqOx[0] );
             }
             if( indCurSqOx[0] < 0 ) {
-                distOx = fabs( trPC[0]  -  hx * indCurSqOx[0] );
+                distOx = fabs( trPC[0]  -  c_h * indCurSqOx[0] );
             }
             if( indCurSqOy[1] >= 0 ) {
-                distOy = fabs( masOY[ indCurSqOy[1] ]  -  trPC[1] );
+                distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
             }
             if( indCurSqOy[1] < 0 ) {
-                distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
+                distOy = fabs( c_h * indCurSqOy[1]  -  trPC[1] );
             }
         }
     } while(!isTrDone);
@@ -1293,13 +1199,7 @@ __device__ double d_integUnderUpperTr(
     double * LvUt,                          //   -  Left, Right and Upper vertices of Upper triangle.
     double * RvUt,                          //   -  Left, Right and Upper vertices of Upper triangle.
     double * UvUt,                          //   -  Left, Right and Upper vertices of Upper triangle.
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-    int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-    int numOfOYSt,                          //   -  Number of OY step
-    //
+   
     double * rhoInPrevTL_asV)
 {
     double integOfUppTr;
@@ -1310,12 +1210,12 @@ __device__ double d_integUnderUpperTr(
         buf_D = d_integUnderRigAngTr_UppRight(
                        iCurrTL,
                     //
-                    RvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    RvUt, UvUt,         rhoInPrevTL_asV );
         integOfUppTr = buf_D;
         buf_D = d_integUnderRigAngTr_UppRight(
                       iCurrTL,
                     //
-                    LvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    LvUt, UvUt,        rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr - buf_D;
         return integOfUppTr;
     }
@@ -1324,13 +1224,13 @@ __device__ double d_integUnderUpperTr(
         buf_D = d_integUnderRigAngTr_UppLeft(
                   iCurrTL,
                     //
-                    LvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    LvUt, UvUt,     rhoInPrevTL_asV );
         integOfUppTr = buf_D;
 
         buf_D = d_integUnderRigAngTr_UppRight(
                       iCurrTL,
                     //
-                    RvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    RvUt, UvUt,       rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr + buf_D;
         return integOfUppTr;
     }
@@ -1339,12 +1239,12 @@ __device__ double d_integUnderUpperTr(
         buf_D = d_integUnderRigAngTr_UppLeft(
                       iCurrTL,
                     //
-                    LvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    LvUt, UvUt,     rhoInPrevTL_asV );
         integOfUppTr = buf_D;
         buf_D = d_integUnderRigAngTr_UppLeft(
                  iCurrTL,
                     //
-                    RvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    RvUt, UvUt,      rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr - buf_D;
         return integOfUppTr;
     }
@@ -1357,13 +1257,6 @@ __device__ double d_integUnderUnunifTr(
     double * firVer,                        //   -  First vertex of triangle.
     double * secVer,                        //   -  Second vertex of triangle.
     double * thiVer,                        //   -  Third vertex of triangle.
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-    int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-    int numOfOYSt,                          //   -  Number of OY steps.
-    //
     double * rhoInPrevTL_asV,
     int ii, int jj ) //!!!!!!!!!!!!!!!!!!!
 {
@@ -1396,7 +1289,7 @@ __device__ double d_integUnderUnunifTr(
         isSecVUsed = false;
         isThiVUsed = true;
     }
-    uv[1] = masOY[0];                                     //   -  The minimum possible value.
+    uv[1] = 0;                                     //   -  The minimum possible value.
     is1VUsed = false;
     is2VUsed = false;
     is3VUsed = false;
@@ -1461,17 +1354,12 @@ __device__ double d_integUnderUnunifTr(
                               iCurrTL,                           //   -  Index of current time layer.
                             //
                             LvBt, RvBt, BvBt,                       //   -  Left, Right and Botton vertices of Botton triangle.
-                            //
-                            masOX, numOfOXSt,                       //   -  Number of OX steps.
-                            //
-                            masOY, numOfOYSt,                       //   -  Number of OY steps.
+                            
                             //
                             rhoInPrevTL_asV,
                             ii, jj ); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         integ = integOfBottTr;
-
-//      printf("m<a:   i= %d, j= %d : integ= %le \n",ii,jj, integ); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+ 
         //   Left, Right and Upper vertices of Upper triangle.
         LvUt[0]  =  mv[0];
         LvUt[1]  =  mv[1];
@@ -1484,10 +1372,7 @@ __device__ double d_integUnderUnunifTr(
                            iCurrTL,                           //   -  Index of current time layer.
                            //
                            LvUt, RvUt, UvUt,                       //   -  Left, Right and Botton vertices of Upper triangle.
-                           //
-                           masOX, numOfOXSt,                       //   -  Number of OX steps.
-                           //
-                           masOY, numOfOYSt,                       //   -  Number of OY steps.
+                           
                            //
                            rhoInPrevTL_asV);
 
@@ -1507,17 +1392,11 @@ __device__ double d_integUnderUnunifTr(
                            iCurrTL,                           //   -  Index of current time layer.
                             //
                             LvBt, RvBt, BvBt,                       //   -  Left, Right and Botton vertices of Botton triangle.
-                            //
-                            masOX, numOfOXSt,                       //   -  Number of OX steps.
-                            //
-                            masOY, numOfOYSt,                       //   -  Number of OY steps.
+                             
                             //
                             rhoInPrevTL_asV,
                             ii, jj ); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        integ = integOfBottTr;
-
-//      printf("m>a:   i= %d, j= %d : integ= %le \n",ii,jj, integ);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        integ = integOfBottTr; 
         //   Left, Right and Upper vertices of Upper triangle.
         LvUt[0]  =  ap[0];
         LvUt[1]  =  ap[1];
@@ -1529,11 +1408,7 @@ __device__ double d_integUnderUnunifTr(
                           iCurrTL,                           //   -  Index of current time layer.
                            //
                            LvUt, RvUt, UvUt,                       //   -  Left, Right and Botton vertices of Upper triangle.
-                           //
-                           masOX, numOfOXSt,                       //   -  Number of OX steps.
-                           //
-                           masOY, numOfOYSt,                       //   -  Number of OY steps.
-                           //
+                           
                            rhoInPrevTL_asV );
         return integ + integOfUppTr;
     }
@@ -1559,18 +1434,6 @@ __device__ double d_f_function(const int current_tl, const int i, const int j)
     dvDY  =  dvDY  /  ( 1.  +  arg_v * arg_v );
     double res = dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
     return res;
-}
-
-__device__ double* init_x_y(int size) // залепуха, удалить
-{
-    double *x;
-   
-    x = new double [ size + 1 ];
-    
-    for( int k = 0; k <= size; k++ ) {
-        x[k] = k*c_h;
-    }
-    return x;
 }
 
 __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, int i, int j)
@@ -1599,22 +1462,16 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
     second2[0] = x - c_tau_b * y * (1. - y) * (c_pi_half + atan(-x));
     second2[1] = y - c_tau * atan((x - c_lb) * (x - c_rb) * c_tau_to_current_tl * (y - c_ub) * (y - c_bb));
 
-    double* ax = init_x_y(10); //залепуха удалить
-    double* ay = init_x_y(10);
 
     double buf_D = d_integUnderUnunifTr( 
-                     current_tl,
-                   first1, second1, third1,
-                   ax, 10, //c_x_size,
-                   ay, 10, //c_y_size,
-                   prev_result,
-                   i, j);
+                    current_tl,
+                    first1, second1, third1, 
+                    prev_result,
+                    i, j);
 
     return buf_D + d_integUnderUnunifTr( 
-            current_tl,       
-           first2, second2, third2,  
-           ax, 10, // c_x_size,                        
-           ay, 10, //c_y_size,                          
+           current_tl,       
+           first2, second2, third2,                   
            prev_result,
            i, j );
 }
@@ -1699,10 +1556,14 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
     cudaMemcpyToSymbol(c_n, &n, sizeof(int));
     temp_i = p->get_real_x_size();
     cudaMemcpyToSymbol(c_x_st_number, &temp_i, sizeof(int));
+
     temp_i = p->get_real_y_size();
     cudaMemcpyToSymbol(c_y_st_number, &temp_i, sizeof(int));
-    temp_i = p->x_size - 1;
+   
+    temp_i = p->x_size;
     cudaMemcpyToSymbol(c_x_length, &temp_i, sizeof(int));
+    temp_i = p->y_size;
+    cudaMemcpyToSymbol(c_y_length, &temp_i, sizeof(int));
     temp_d = 1. / (p->x_size);
     cudaMemcpyToSymbol(c_h, &temp_d, sizeof(double));
 

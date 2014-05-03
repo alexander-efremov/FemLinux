@@ -174,11 +174,9 @@ __device__ double d_integUnderRightTr_OneCell(
     //
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+    
     int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+     
     int numOfOYSt,                          //   -  Number of OY steps.
     //
     double * rhoInPrevTL_asV )
@@ -247,28 +245,28 @@ __device__ double d_integUnderRectAng_OneCell(
     }
 
     if(   (indCurSqOx[1] >= 0) && (indCurSqOy[1] >= 0)   ) {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, masOX[ indCurSqOx[1] ], masOY[ indCurSqOy[1] ] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h * indCurSqOx[1],  c_h * indCurSqOy[1] );
     } else {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx *indCurSqOx[1]   , hy * indCurSqOy[1] );
     }
     buf_D = buf_D  /hx /hy;
     integ = buf_D * rho[0][0];                            //   rhoInPrevTL[ indCurSqOx[0] ][ indCurSqOy[0] ];
     if(   (indCurSqOx[0] >= 0)  &&   (indCurSqOy[1] >= 0)   ) {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, masOX[ indCurSqOx[0] ], masOY[ indCurSqOy[1] ] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h *indCurSqOx[0] , c_h * indCurSqOy[1]  );
     } else {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx * indCurSqOx[0]  , hy * indCurSqOy[1] );
     }
     buf_D = buf_D  /hx /hy;
     integ = integ - buf_D * rho[1][0];                    //   rhoInPrevTL[ indCurSqOx[1] ][ indCurSqOy[0] ];
     if(   (indCurSqOx[1] >= 0)  &&  (indCurSqOy[0] >= 0)   ) {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, masOX[ indCurSqOx[1] ], masOY[ indCurSqOy[0] ] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h * indCurSqOx[1] , c_h * indCurSqOy[0]  );
     } else {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx * indCurSqOx[1]  , hy * indCurSqOy[0] );
     }
     buf_D = buf_D  /hx /hy;
     integ = integ - buf_D * rho[0][1];                    //   rhoInPrevTL[ indCurSqOx[0] ][ indCurSqOy[1] ];
     if(   (indCurSqOx[0] >= 0)  &&  (indCurSqOy[0] >= 0)   ) {
-        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, masOX[ indCurSqOx[0] ], masOY[ indCurSqOy[0] ] );
+        buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx, c_h *indCurSqOx[0], c_h * indCurSqOy[0] );
     } else {
         buf_D = d_itemOfInteg_1SpecType( Py, Qy, Gx, Hx,   hx * indCurSqOx[0]  , hy * indCurSqOy[0] );
     }
@@ -289,11 +287,9 @@ __device__ double d_integOfChan_SLRightSd(
     double lb,  int * indLB,                //   -  Left boundary by Ox. Index by OX axis where lb is.
     //
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+     
     int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+    
     int numOfOYSt,                          //   -  Number of OY steps.
     //
     double * rhoInPrevTL_asV )
@@ -301,7 +297,7 @@ __device__ double d_integOfChan_SLRightSd(
     double mv[2], rv[2];                                  //   -  Middle and right vertices.
     int wMvI;                                             //   -  Where middle vertex is.
     int indCurSqOxToCh[2];                                //   -  Indices of current square by Ox axis to be changed. Under which we want to integrate.
-    double h = masOX[1] - masOX[0];
+    double h = c_h;
     double a_SL, b_SL;                                    //   -  Coefficients of slant line: x = a_SL *y  +  b_SL.
     double Gx, Hx;                                        //   -  Left boundary for each integration.
     double integ = 0.;
@@ -342,8 +338,8 @@ __device__ double d_integOfChan_SLRightSd(
     for( j = indLB[0]; j< indCurSqOx[0]; j++ ) {
         //   If this is first cell we should integrate under rectangle only.
         if( indCurSqOxToCh[0] >= 0 ) {
-            Gx = masOX[ indCurSqOxToCh[0] ];
-            Hx = masOX[ indCurSqOxToCh[1] ];
+            Gx = c_h *  indCurSqOxToCh[0];
+            Hx = c_h *  indCurSqOxToCh[1];
         }
 
 
@@ -391,7 +387,7 @@ __device__ double d_integOfChan_SLRightSd(
         if( indCurSqOx[0] > indLB[0] ) {
 
             if( indCurSqOx[0] >= 0) {
-                Gx = masOX[ indCurSqOx[0] ];
+                Gx = c_h *  indCurSqOx[0];
             }
 
             if( indCurSqOx[0] < 0) {
@@ -445,11 +441,9 @@ __device__ double d_integOfChan_SLRightSd(
                         //
                         indCurSqOx,                             //   -  Index of current square by Ox axis.
                         indCurSqOy,                             //   -  Index of current square by Oy axis.
-                        //
-                        masOX,                                  //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+                         
                         numOfOXSt,                              //   -  Number of OX steps.
-                        //
-                        masOY,                                  //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+                        
                         numOfOYSt,                              //   -  Number of OY steps.
                         //
                         rhoInPrevTL_asV );
@@ -471,11 +465,9 @@ __device__ double d_integOfChan_SLLeftSd(
     double rb,  int * indRB,                //   -  Right boundary by Ox. Index by OX axis where rb is.
     //
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+    
     int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+    
     int numOfOYSt,                          //   -  Number of OY steps.
     //
     double * rhoInPrevTL_asV )
@@ -483,7 +475,7 @@ __device__ double d_integOfChan_SLLeftSd(
     double lv[2], mv[2];                                  //   -  Left and middle vertices.
     int wMvI;                                             //   -  Where middle vertex is.
     int indCurSqOxToCh[2];                                //   -  Indices of current square by Ox axis to be changed. Under which we want to integrate.
-    double h = masOX[1] - masOX[0];
+    double h = c_h;
     double a_SL, b_SL;                                    //   -  Coefficients of slant line: x = a_SL *y  +  b_SL.
     double Gx, Hx;                                        //   -  Left and right boundary for each integration.
     double integ = 0.;
@@ -557,7 +549,7 @@ __device__ double d_integOfChan_SLLeftSd(
 
         if( indCurSqOx[0] < indRB[0] ) {
             if( indCurSqOx[1] >= 0) {
-                Hx = masOX[ indCurSqOx[1] ];
+                Hx = c_h * indCurSqOx[1] ;
             }
 
             if( indCurSqOx[1] < 0) {
@@ -596,8 +588,8 @@ __device__ double d_integOfChan_SLLeftSd(
         //   If this is first cell we should integrate under triangle only.
 
         if( indCurSqOxToCh[1] > 0 ) {
-            Gx = masOX[ indCurSqOxToCh[0] ];
-            Hx = masOX[ indCurSqOxToCh[1] ];
+            Gx = c_h * indCurSqOxToCh[0] ;
+            Hx = c_h * indCurSqOxToCh[1];
         }
 
 
@@ -645,11 +637,9 @@ __device__ double d_integUnderRigAngTr_BottLeft(
     //
     double *bv,
     double *uv,
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+   
     int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+    
     int numOfOYSt,                          //   -  Number of OY steps.
     //
     double * rhoInPrevTL_asV )
@@ -663,8 +653,8 @@ __device__ double d_integUnderRigAngTr_BottLeft(
     int indRB[2];                                         //   -  Index of right boundary.
     double distOx, distOy;                                //   -  Distance to near Ox and Oy straight lines.
     bool isTrDone = false;                                //   -  Is travel done.
-    double hx = masOX[1] - masOX[0];
-    double hy = masOY[1] - masOY[0];
+    double hx = c_h*1 - c_h*0;
+    double hy = c_h*1 - c_h*0;
     double integOfBottTr = 0.;                            //   -  Value which we are computing.
     double buf_D;
     //   Initial data.
@@ -692,13 +682,13 @@ __device__ double d_integUnderRigAngTr_BottLeft(
     }
     indCurSqOy[1] = indCurSqOy[0] +1;                     //   -  It's important only in rare case then trPC is in grid edge.
     if( indCurSqOx[0] >= 0) {
-        distOx = trPC[0]  -  masOX[ indCurSqOx[0] ];
+        distOx = trPC[0]  -  c_h * indCurSqOx[0] ;
     }
     if( indCurSqOx[0] < 0 ) {
         distOx = fabs( trPC[0]  -  hx * indCurSqOx[0] );
     }
     if( indCurSqOy[1] >= 0 ) {
-        distOy = masOY[ indCurSqOy[1] ]  -  trPC[1];
+        distOy = c_h * indCurSqOy[1]  -  trPC[1];
     }
     if( indCurSqOy[1] < 0 ) {
         distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
@@ -709,7 +699,7 @@ __device__ double d_integUnderRigAngTr_BottLeft(
             //   Across with straight line parallel Ox axis.
             wTrPNI = 1;
             if( indCurSqOy[1] >= 0) {
-                trPN[1] = masOY[ indCurSqOy[1] ];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             if( indCurSqOy[1] < 0) {
                 trPN[1] = hy * indCurSqOy[1];
@@ -721,7 +711,7 @@ __device__ double d_integUnderRigAngTr_BottLeft(
             //   Across with straight line parallel Oy axis.
             wTrPNI = 2;
             if( indCurSqOx[0] >= 0 ) {
-                trPN[0]  =  masOX[ indCurSqOx[0] ];
+                trPN[0]  =  c_h * indCurSqOx[0];
             }
             if( indCurSqOx[0] < 0 ) {
                 trPN[0]  =  hx * indCurSqOx[0];
@@ -747,11 +737,9 @@ __device__ double d_integUnderRigAngTr_BottLeft(
                     bv[0], indRB,                           //   -  double rb  =  Right boundary by Ox.
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
-                    //
-                    masOX,                                  //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+                    
                     numOfOXSt,                              //   -  Number of OX steps.
-                    //
-                    masOY,                                  //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+                   
                     numOfOYSt,                              //   -  Number of OY steps.
                     //
                     rhoInPrevTL_asV );
@@ -771,13 +759,13 @@ __device__ double d_integUnderRigAngTr_BottLeft(
                 indCurSqOx[1] -= 1;
             }
             if( indCurSqOx[0] >= 0) {
-                distOx = trPC[0]  -  masOX[ indCurSqOx[0] ];
+                distOx = trPC[0]  -  c_h *  indCurSqOx[0] ;
             }
             if( indCurSqOx[0] < 0) {
                 distOx = fabs( trPC[0]  -  hx * indCurSqOx[0] );
             }
             if( indCurSqOy[1] >= 0 ) {
-                distOy = masOY[ indCurSqOy[1] ]  -  trPC[1];
+                distOy = c_h *  indCurSqOy[1]  -  trPC[1];
             }
             if( indCurSqOy[1] < 0 ) {
                 distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
@@ -792,11 +780,9 @@ __device__ double d_integUnderRigAngTr_BottRight(
     //
     double *bv,
     double *uv,
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+  
     int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+    
     int numOfOYSt,                          //   -  Number of OY steps.
     //
     double * rhoInPrevTL_asV )
@@ -810,8 +796,8 @@ __device__ double d_integUnderRigAngTr_BottRight(
     int indLB[2];                                         //   -  Index of left boundary.
     double distOx, distOy;                                //   -  Distance to near Ox and Oy straight lines.
     bool isTrDone = false;                                //   -  Is travel done.
-    double hx = masOX[1] - masOX[0];
-    double hy = masOY[1] - masOY[0];
+    double hx = c_h;
+    double hy = c_h;
     double integOfBottTr = 0.;                            //   -  Value which we are computing.
     double buf_D;
 
@@ -837,13 +823,13 @@ __device__ double d_integUnderRigAngTr_BottRight(
     indCurSqOy[1] = indCurSqOy[0] +1;                     //   -  It's important only in rare case then trPC is in grid edge.
 
     if( indCurSqOx[1] >=0 ) {
-        distOx = fabs( masOX[ indCurSqOx[1] ]  -  trPC[0] );
+        distOx = fabs( c_h * indCurSqOx[1]  -  trPC[0] );
     }
     if( indCurSqOx[1] < 0 ) {
         distOx = fabs( hx * indCurSqOx[1]  -  trPC[0] );
     }
     if( indCurSqOy[1] >=0 ) {
-        distOy = fabs( masOY[ indCurSqOy[1] ]  -  trPC[1] );
+        distOy = fabs( c_h * indCurSqOy[1]   -  trPC[1] );
     }
     if( indCurSqOy[1] < 0 ) {
         distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
@@ -854,7 +840,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
             //   Across with straight line parallel Ox axis.
             wTrPNI = 1;
             if( indCurSqOy[1] >=0 ) {
-                trPN[1] = masOY[ indCurSqOy[1] ];
+                trPN[1] = c_h * indCurSqOy[1];
             }
             if( indCurSqOy[1] < 0 ) {
                 trPN[1] = hy * indCurSqOy[1];
@@ -866,7 +852,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
             //   Across with straight line parallel Oy axis.
             wTrPNI = 2;
             if( indCurSqOx[1] >= 0 ) {
-                trPN[0]  =  masOX[ indCurSqOx[1] ];
+                trPN[0]  =  c_h * indCurSqOx[1];
             }
             if( indCurSqOx[1]  < 0 ) {
                 trPN[0]  =  hx * indCurSqOx[1];
@@ -892,11 +878,9 @@ __device__ double d_integUnderRigAngTr_BottRight(
                     bv[0], indLB,                           //   -  double lb  =  Left boundary by Ox.
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
-                    //
-                    masOX,                                  //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+                    
                     numOfOXSt,                              //   -  Number of OX steps.
-                    //
-                    masOY,                                  //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+                    
                     numOfOYSt,                              //   -  Number of OY steps.
                     //
                     rhoInPrevTL_asV );
@@ -916,13 +900,13 @@ __device__ double d_integUnderRigAngTr_BottRight(
                 indCurSqOx[1] += 1;
             }
             if( indCurSqOx[1] >=0 ) {
-                distOx = fabs( masOX[ indCurSqOx[1] ]  -  trPC[0] );
+                distOx = fabs( c_h * indCurSqOx[1]   -  trPC[0] );
             }
             if( indCurSqOx[1] < 0 ) {
                 distOx = fabs( hx * indCurSqOx[1]  -  trPC[0] );
             }
             if( indCurSqOy[1] >=0 ) {
-                distOy = fabs( masOY[ indCurSqOy[1] ]  -  trPC[1] );
+                distOy = fabs( c_h * indCurSqOy[1]   -  trPC[1] );
             }
             if( indCurSqOy[1] < 0 ) {
                 distOy = fabs( hy * indCurSqOy[1]  -  trPC[1] );
@@ -956,12 +940,12 @@ __device__ double d_integUnderBottTr(
         buf_D = d_integUnderRigAngTr_BottRight(
                        iCurrTL,
                     //
-                    BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, RvBt,   numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = buf_D;
         buf_D = d_integUnderRigAngTr_BottRight(
                      iCurrTL,
                     //
-                    BvBt, LvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, LvBt,    numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
 
 //      printf("Bv<Lv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -974,13 +958,13 @@ __device__ double d_integUnderBottTr(
         buf_D = d_integUnderRigAngTr_BottLeft(
                iCurrTL,
                     //
-                    BvBt, LvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, LvBt,     numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = buf_D;
 
         buf_D = d_integUnderRigAngTr_BottRight(
                      iCurrTL,
                     //
-                    BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, RvBt,     numOfOXSt,  numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr + buf_D;
 
 //      printf("Bv>Lv & Bv<Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -993,12 +977,12 @@ __device__ double d_integUnderBottTr(
         buf_D = d_integUnderRigAngTr_BottLeft(
                iCurrTL,
                     //
-                    BvBt, LvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, LvBt,    numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = buf_D;
         buf_D = d_integUnderRigAngTr_BottLeft(
                  iCurrTL,
                     //
-                    BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
+                    BvBt, RvBt,     numOfOXSt,   numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
 
 //      printf("Bv>Rv: i= %d, j= %d      res= %le",ii,jj,integOfBottTr);     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1116,11 +1100,9 @@ __device__ double d_integUnderRigAngTr_UppLeft(
                     uv[0], indRB,                           //   -  double rb  =  Right boundary by Ox.
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
-                    //
-                    masOX,                                  //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+                    
                     numOfOXSt,                              //   -  Number of OX steps.
-                    //
-                    masOY,                                  //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+                    
                     numOfOYSt,                              //   -  Number of OY steps.
                     //
                     rhoInPrevTL_asV );
@@ -1267,11 +1249,9 @@ __device__ double d_integUnderRigAngTr_UppRight(
                     uv[0], indLB,                           //   -  double lb  =  Left boundary by Ox.
                     //
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
-                    //
-                    masOX,                                  //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+                    
                     numOfOXSt,                              //   -  Number of OX steps.
-                    //
-                    masOY,                                  //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+                     
                     numOfOYSt,                              //   -  Number of OY steps.
                     //
                     rhoInPrevTL_asV );

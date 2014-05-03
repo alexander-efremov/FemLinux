@@ -271,7 +271,7 @@ __device__ double d_integOfChan_SLRightSd(
     
     double * rhoInPrevTL_asV )
 {
-    double mv[2], rv[2];                                  //   -  Middle and right vertices.
+    double mv[2];                                  //   -  Middle and right vertices.
     int wMvI;                                             //   -  Where middle vertex is.
     int indCurSqOxToCh[2];                                //   -  Indices of current square by Ox axis to be changed. Under which we want to integrate.
     double h = c_h;
@@ -287,16 +287,14 @@ __device__ double d_integOfChan_SLRightSd(
         mv[0] = uv[0];
         mv[1] = uv[1];
         wMvI = wTrPNI;
-        rv[0] = bv[0];
-        rv[1] = bv[1];
+        
     }
 
     if( uv[0] >  bv[0] ) {
         mv[0] = bv[0];
         mv[1] = bv[1];
         wMvI = wTrPCI;
-        rv[0] = uv[0];
-        rv[1] = uv[1];
+         
     }
 
     if(  ( fabs(uv[1] - bv[1]) )  <=  1.e-12  ) {
@@ -434,7 +432,7 @@ __device__ double d_integOfChan_SLLeftSd(
     
     double * rhoInPrevTL_asV )
 {
-    double lv[2], mv[2];                                  //   -  Left and middle vertices.
+    double   mv[2];                                  //   -  Left and middle vertices.
     int wMvI;                                             //   -  Where middle vertex is.
     int indCurSqOxToCh[2];                                //   -  Indices of current square by Ox axis to be changed. Under which we want to integrate.
     double h = c_h;
@@ -447,16 +445,14 @@ __device__ double d_integOfChan_SLLeftSd(
 //   Let's compute helpful values.
 
     if( uv[0] <=  bv[0] ) {
-        lv[0] = uv[0];
-        lv[1] = uv[1];
+         
         mv[0] = bv[0];
         mv[1] = bv[1];
         wMvI = wTrPCI;
     }
 
     if( uv[0] >  bv[0] ) {
-        lv[0] = bv[0];
-        lv[1] = bv[1];
+        
         mv[0] = uv[0];
         mv[1] = uv[1];
         wMvI = wTrPNI;

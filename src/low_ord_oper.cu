@@ -9,16 +9,15 @@
 #include "cuda_constant.cuh"
 
 
-__device__ double d_u_function(double par_b, double t, double x,
+__device__ double d_u_function(double t, double x,
                                         double y) {
-                                            return par_b * y * (1. - y) * (C_pi_device / 2. + atan(-x));
+                                            return c_b * y * (1. - y) * (C_pi_device / 2. + atan(-x));
 }
 
-__device__ double d_v_function(double lbDom, double rbDom,
-                                        double bbDom, double ubDom, double t, double x, double y) {
+__device__ double d_v_function(double t, double x, double y) {
                                             return atan(
-                                                (x - lbDom) * (x - rbDom) * (1. + t) / 10. * (y - ubDom)
-                                                * (y - bbDom));
+                                                (x - c_lb) * (x - c_rb) * (1. + t) / 10. * (y - c_ub)
+                                                * (y - c_bb));
 }
 
 __device__ double d_itemOfInteg_1SpecType(
@@ -62,23 +61,13 @@ __device__ double d_itemOfInteg_2SpecType(
     return integ  -  buf_D / (12. *a *a);
 }
 
-__device__ double d_integUnderLeftTr_OneCell(
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
+__device__ double d_integUnderLeftTr_OneCell( 
     double Py,
     double Qy,
     //
     double a_SL,
     double b_SL,
     double Hx,
-    //
-    double tau,
     int iCurrTL,                            //   -  Index of current time layer.
     //
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
@@ -97,7 +86,7 @@ __device__ double d_integUnderLeftTr_OneCell(
     double integ = 0;
     double buf_D, bufInteg_D;
     double rho[2][2];
-    double t = tau * (iCurrTL - 1.);
+    double t = c_tau * (iCurrTL - 1.);
     double x, y;
     if(  (indCurSqOx[0] >=0)  &&  (indCurSqOx[1] <=numOfOXSt)  ) {
         if(  (indCurSqOy[0] >=0)  &&  (indCurSqOy[1] <=numOfOYSt)  ) {
@@ -176,23 +165,13 @@ __device__ double d_integUnderLeftTr_OneCell(
     return integ;
 }
 
-__device__ double d_integUnderRightTr_OneCell(
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
+__device__ double d_integUnderRightTr_OneCell( 
     double Py,
     double Qy,
     //
     double a_SL,
     double b_SL,
     double Gx,
-    //
-    double tau,
     int iCurrTL,                            //   -  Index of current time layer.
     //
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
@@ -206,19 +185,12 @@ __device__ double d_integUnderRightTr_OneCell(
     //
     double * rhoInPrevTL_asV )
 {
-    return -1. * d_integUnderLeftTr_OneCell(
-               par_a,                                  //   -  Solution parameter.
-               //
-               lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-               //
-               bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-               //
+    return -1. * d_integUnderLeftTr_OneCell( 
                Py, Qy,
                //
                a_SL, b_SL,
                Gx,                                     //   -  double Hx,
-               //
-               tau, iCurrTL,                           //   -  Index of current time layer.
+               iCurrTL,                           //   -  Index of current time layer.
                //
                indCurSqOx,                             //   -  Index of current square by Ox axis.
                indCurSqOy,                             //   -  Index of current square by Oy axis.
@@ -230,22 +202,13 @@ __device__ double d_integUnderRightTr_OneCell(
                rhoInPrevTL_asV );
 }
 
-__device__ double d_integUnderRectAng_OneCell(
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
+__device__ double d_integUnderRectAng_OneCell( 
     double Py,
     double Qy,
     //
     double Gx,
     double Hx,
-    //
-    double tau,
+
     int iCurrTL,                            //   -  Index of current time layer.
     //
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
@@ -264,7 +227,7 @@ __device__ double d_integUnderRectAng_OneCell(
     double integ = 0;
     double buf_D;
     double rho[2][2];
-    double t = tau * (iCurrTL -1.);
+    double t = c_tau * (iCurrTL -1.);
     double x, y;
     if(   (indCurSqOx[0] >=0) && (indCurSqOy[0] >=0)  ) {
         
@@ -319,16 +282,7 @@ __device__ double d_integUnderRectAng_OneCell(
     return integ + buf_D * rho[1][1];                    //   rhoInPrevTL[ indCurSqOx[1] ][ indCurSqOy[1] ];
 }
 
-__device__ double d_integOfChan_SLRightSd(                         //   -  The domain is Channel with Slant Line on the right side.
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integOfChan_SLRightSd( 
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double *bv,   int wTrPCI,               //   -  Where travel point current (botton vertex) is.
@@ -406,20 +360,14 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
             Gx = lb;
         }
 
-        buf_D = d_integUnderRectAng_OneCell(
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                    //
-                    bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                    //
+        buf_D = d_integUnderRectAng_OneCell( 
                     bv[1],                                  //   -  double Py,
                     uv[1],                                  //   -  double Qy,
                     //
                     Gx,                                     //   -  double Gx,
                     Hx,                                     //   -  double Hx,
                     //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+                      iCurrTL,                           //   -  Index of current time layer.
                     //
                     indCurSqOxToCh,                         //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
@@ -457,20 +405,14 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
             }
         }
 
-        buf_D = d_integUnderRectAng_OneCell(
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                    //
-                    bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                    //
+        buf_D = d_integUnderRectAng_OneCell( 
                     bv[1],                                  //   -  double Py,
                     uv[1],                                  //   -  double Qy,
                     //
                     Gx,                                     //   -  double Gx,
                     mv[0],                                  //   -  double Hx,
                     //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+                   iCurrTL,                           //   -  Index of current time layer.
                     //
                     indCurSqOx,                             //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
@@ -499,13 +441,7 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
         //   Integration under one cell triangle.
 
         if( fabs( a_SL ) >  1.e-12 ) {
-            buf_D = d_integUnderRightTr_OneCell(
-                        par_a,                                  //   -  Solution parameter.
-                        //
-                        lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                        //
-                        bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                        //
+            buf_D = d_integUnderRightTr_OneCell( 
                         bv[1],                                  //   -  double Py,
                         uv[1],                                  //   -  double Qy,
                         //
@@ -513,7 +449,7 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
                         b_SL,
                         mv[0],                                  //   -  double Gx,
                         //
-                        tau, iCurrTL,                           //   -  Index of current time layer.
+                         iCurrTL,                           //   -  Index of current time layer.
                         //
                         indCurSqOx,                             //   -  Index of current square by Ox axis.
                         indCurSqOy,                             //   -  Index of current square by Oy axis.
@@ -532,16 +468,7 @@ __device__ double d_integOfChan_SLRightSd(                         //   -  The d
     return integ;
 }
 
-__device__ double d_integOfChan_SLLeftSd(                          //   -  The domain is Channel with Slant Line on the left side.
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integOfChan_SLLeftSd(   
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double *bv,   int wTrPCI,               //   -  Where travel point current (botton vertex) is.
@@ -606,13 +533,7 @@ __device__ double d_integOfChan_SLLeftSd(                          //   -  The d
 
         //   Integration under one cell triangle.
         if( fabs( a_SL ) >  1.e-12 ) {
-            buf_D = d_integUnderLeftTr_OneCell(
-                        par_a,                                  //   -  Solution parameter.
-                        //
-                        lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                        //
-                        bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                        //
+            buf_D = d_integUnderLeftTr_OneCell( 
                         bv[1],                                  //   -  double Py,
                         uv[1],                                  //   -  double Qy,
                         //
@@ -620,7 +541,7 @@ __device__ double d_integOfChan_SLLeftSd(                          //   -  The d
                         b_SL,
                         mv[0],                                  //   -  double Hx,
                         //
-                        tau, iCurrTL,                           //   -  Index of current time layer.
+                         iCurrTL,                           //   -  Index of current time layer.
                         //
                         indCurSqOx,                             //   -  Index of current square by Ox axis.
                         indCurSqOy,                             //   -  Index of current square by Oy axis.
@@ -654,20 +575,14 @@ __device__ double d_integOfChan_SLLeftSd(                          //   -  The d
             }
         }
 
-        buf_D = d_integUnderRectAng_OneCell(
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                    //
-                    bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                    //
+        buf_D = d_integUnderRectAng_OneCell( 
                     bv[1],                                  //   -  double Py,
                     uv[1],                                  //   -  double Qy,
                     //
                     mv[0],                                  //   -  double Gx,
                     Hx,                                     //   -  double Hx,
                     //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+                      iCurrTL,                           //   -  Index of current time layer.
                     //
                     indCurSqOx,                             //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
@@ -709,20 +624,15 @@ __device__ double d_integOfChan_SLLeftSd(                          //   -  The d
         }
 
 
-        buf_D = d_integUnderRectAng_OneCell(
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                    //
-                    bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                    //
+        buf_D = d_integUnderRectAng_OneCell( 
                     bv[1],                                  //   -  double Py,
                     uv[1],                                  //   -  double Qy,
                     //
                     Gx,                                     //   -  double Gx,
                     Hx,                                     //   -  double Hx,
                     //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+                     
+                      iCurrTL,                           //   -  Index of current time layer.
                     //
                     indCurSqOxToCh,                         //   -  Index of current square by Ox axis.
                     indCurSqOy,                             //   -  Index of current square by Oy axis.
@@ -744,16 +654,7 @@ __device__ double d_integOfChan_SLLeftSd(                          //   -  The d
     return integ;
 }
 
-__device__ double d_integUnderRigAngTr_BottLeft(
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integUnderRigAngTr_BottLeft(  
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double *bv,
@@ -849,14 +750,8 @@ __device__ double d_integUnderRigAngTr_BottLeft(
             wTrPNI = 0;
         }
         //   d. Integration.
-        buf_D = d_integOfChan_SLLeftSd(                      //   -  The domain is Channel with Slant Line on the left side.
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,
-                    //
-                    bbDom, ubDom,
-                    //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+        buf_D = d_integOfChan_SLLeftSd(  
+                     iCurrTL,                           //   -  Index of current time layer.
                     //
                     trPC,  wTrPCI,                          //   -  double *bv,
                     trPN,  wTrPNI,                          //   -  double *uv,
@@ -906,16 +801,7 @@ __device__ double d_integUnderRigAngTr_BottLeft(
     return integOfBottTr;
 }
 
-__device__ double d_integUnderRigAngTr_BottRight(
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integUnderRigAngTr_BottRight(   
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double *bv,
@@ -1009,14 +895,8 @@ __device__ double d_integUnderRigAngTr_BottRight(
             wTrPNI = 0;
         }
         //   d. Integration.
-        buf_D = d_integOfChan_SLRightSd(                     //   -  The domain is Channel with Slant Line on the Right side.
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,
-                    //
-                    bbDom, ubDom,
-                    //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+        buf_D = d_integOfChan_SLRightSd( 
+                      iCurrTL,                           //   -  Index of current time layer.
                     //
                     trPC,  wTrPCI,                          //   -  double *bv,
                     trPN,  wTrPNI,                          //   -  double *uv,
@@ -1066,17 +946,7 @@ __device__ double d_integUnderRigAngTr_BottRight(
     return integOfBottTr;
 }
 
-__device__ double d_integUnderBottTr(
-    double par_a,                           //   -  Item of left and right setback (parameter "a" in test).
-    double par_b,                           //   -  Item of second parameter from "u_funcion".
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integUnderBottTr(   
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double * LvBt,                          //   -  Left, Right and Botton vertices of Botton triangle.
@@ -1098,12 +968,12 @@ __device__ double d_integUnderBottTr(
     //   1.
     if(  BvBt[0] <= LvBt[0]  ) {
         buf_D = d_integUnderRigAngTr_BottRight(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                       iCurrTL,
                     //
                     BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = buf_D;
         buf_D = d_integUnderRigAngTr_BottRight(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                     iCurrTL,
                     //
                     BvBt, LvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
@@ -1116,13 +986,13 @@ __device__ double d_integUnderBottTr(
     if(  (BvBt[0] > LvBt[0]) && (BvBt[0] < RvBt[0]) ) {
 
         buf_D = d_integUnderRigAngTr_BottLeft(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+               iCurrTL,
                     //
                     BvBt, LvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = buf_D;
 
         buf_D = d_integUnderRigAngTr_BottRight(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                     iCurrTL,
                     //
                     BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr + buf_D;
@@ -1135,12 +1005,12 @@ __device__ double d_integUnderBottTr(
     if(  BvBt[0] >= RvBt[0]  ) {
 
         buf_D = d_integUnderRigAngTr_BottLeft(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+               iCurrTL,
                     //
                     BvBt, LvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = buf_D;
         buf_D = d_integUnderRigAngTr_BottLeft(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                 iCurrTL,
                     //
                     BvBt, RvBt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfBottTr = integOfBottTr - buf_D;
@@ -1152,16 +1022,7 @@ __device__ double d_integUnderBottTr(
     return integOfBottTr;
 }
 
-__device__ double d_integUnderRigAngTr_UppLeft(
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integUnderRigAngTr_UppLeft(  
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double *bv,
@@ -1258,14 +1119,8 @@ __device__ double d_integUnderRigAngTr_UppLeft(
             wTrPNI = 0;
         }
         //   d. Integration.
-        buf_D = d_integOfChan_SLLeftSd(                      //   -  The domain is Channel with Slant Line on the left side.
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,
-                    //
-                    bbDom, ubDom,
-                    //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+        buf_D = d_integOfChan_SLLeftSd(  
+                     iCurrTL,                           //   -  Index of current time layer.
                     //
                     trPC,  wTrPCI,                          //   -  double *bv,
                     trPN,  wTrPNI,                          //   -  double *uv,
@@ -1315,16 +1170,7 @@ __device__ double d_integUnderRigAngTr_UppLeft(
     return integOfUppTr;
 }
 
-__device__ double d_integUnderRigAngTr_UppRight(
-    double par_a,                           //   -  Solution parameter.
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integUnderRigAngTr_UppRight(  
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double *bv,
@@ -1424,14 +1270,8 @@ __device__ double d_integUnderRigAngTr_UppRight(
             wTrPNI = 0;
         }
         //   d. Integration.
-        buf_D = d_integOfChan_SLRightSd(                     //   -  The domain is Channel with Slant Line on the Right side.
-                    par_a,                                  //   -  Solution parameter.
-                    //
-                    lbDom, rbDom,
-                    //
-                    bbDom, ubDom,
-                    //
-                    tau, iCurrTL,                           //   -  Index of current time layer.
+        buf_D = d_integOfChan_SLRightSd( 
+                     iCurrTL,                           //   -  Index of current time layer.
                     //
                     trPC,  wTrPCI,                          //   -  double *bv,
                     trPN,  wTrPNI,                          //   -  double *uv,
@@ -1481,17 +1321,7 @@ __device__ double d_integUnderRigAngTr_UppRight(
     return integOfUppTr;
 }
 
-__device__ double d_integUnderUpperTr(
-    double par_a,                           //   -  Item of left and right setback (parameter "a" in test).
-    double par_b,                           //   -  Item of second parameter from "u_funcion".
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integUnderUpperTr(  
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double * LvUt,                          //   -  Left, Right and Upper vertices of Upper triangle.
@@ -1512,12 +1342,12 @@ __device__ double d_integUnderUpperTr(
     //   1.
     if(  UvUt[0] <= LvUt[0]  ) {
         buf_D = d_integUnderRigAngTr_UppRight(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                       iCurrTL,
                     //
                     RvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfUppTr = buf_D;
         buf_D = d_integUnderRigAngTr_UppRight(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                      iCurrTL,
                     //
                     LvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr - buf_D;
@@ -1526,13 +1356,13 @@ __device__ double d_integUnderUpperTr(
     //   2.
     if(  (UvUt[0] > LvUt[0]) && (UvUt[0] < RvUt[0]) ) {
         buf_D = d_integUnderRigAngTr_UppLeft(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                  iCurrTL,
                     //
                     LvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfUppTr = buf_D;
 
         buf_D = d_integUnderRigAngTr_UppRight(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                      iCurrTL,
                     //
                     RvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr + buf_D;
@@ -1541,12 +1371,12 @@ __device__ double d_integUnderUpperTr(
     //   3.
     if(  UvUt[0] >= RvUt[0]  ) {
         buf_D = d_integUnderRigAngTr_UppLeft(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                      iCurrTL,
                     //
                     LvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfUppTr = buf_D;
         buf_D = d_integUnderRigAngTr_UppLeft(
-                    par_a,   lbDom, rbDom,   bbDom, ubDom,   tau, iCurrTL,
+                 iCurrTL,
                     //
                     RvUt, UvUt,   masOX, numOfOXSt, masOY, numOfOYSt,   rhoInPrevTL_asV );
         integOfUppTr = integOfUppTr - buf_D;
@@ -1555,17 +1385,7 @@ __device__ double d_integUnderUpperTr(
     return integOfUppTr;
 }
 
-__device__ double d_integUnderUnunifTr(
-    double par_a,                           //   -  Item of left and right setback (parameter "a" in test).
-    double par_b,                           //   -  Item of second parameter from "u_funcion".
-    //
-    double lbDom,                           //   -  Left and right boundaries of rectangular domain.
-    double rbDom,
-    //
-    double bbDom,                           //   -  Botton and upper boundaries of rectangular domain.
-    double ubDom,
-    //
-    double tau,
+__device__ double d_integUnderUnunifTr(  
     int iCurrTL,                            //   -  Index of current time layer.
     //
     double * firVer,                        //   -  First vertex of triangle.
@@ -1671,14 +1491,8 @@ __device__ double d_integUnderUnunifTr(
         RvBt[1]  =  ap[1];
         BvBt[0]  =  bv[0];
         BvBt[1]  =  bv[1];
-        integOfBottTr = d_integUnderBottTr(
-                            par_a, par_b,
-                            //
-                            lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                            //
-                            bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                            //
-                            tau, iCurrTL,                           //   -  Index of current time layer.
+        integOfBottTr = d_integUnderBottTr( 
+                              iCurrTL,                           //   -  Index of current time layer.
                             //
                             LvBt, RvBt, BvBt,                       //   -  Left, Right and Botton vertices of Botton triangle.
                             //
@@ -1700,14 +1514,8 @@ __device__ double d_integUnderUnunifTr(
         UvUt[0]  =  uv[0];
         UvUt[1]  =  uv[1];
     
-        integOfUppTr = d_integUnderUpperTr(
-                           par_a, par_b,
-                           //
-                           lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                           //
-                           bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                           //
-                           tau, iCurrTL,                           //   -  Index of current time layer.
+        integOfUppTr = d_integUnderUpperTr( 
+                           iCurrTL,                           //   -  Index of current time layer.
                            //
                            LvUt, RvUt, UvUt,                       //   -  Left, Right and Botton vertices of Upper triangle.
                            //
@@ -1729,14 +1537,8 @@ __device__ double d_integUnderUnunifTr(
         RvBt[1]  =  mv[1];
         BvBt[0]  =  bv[0];
         BvBt[1]  =  bv[1];
-        integOfBottTr = d_integUnderBottTr(
-                            par_a, par_b,
-                            //
-                            lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                            //
-                            bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                            //
-                            tau, iCurrTL,                           //   -  Index of current time layer.
+        integOfBottTr = d_integUnderBottTr( 
+                           iCurrTL,                           //   -  Index of current time layer.
                             //
                             LvBt, RvBt, BvBt,                       //   -  Left, Right and Botton vertices of Botton triangle.
                             //
@@ -1757,14 +1559,8 @@ __device__ double d_integUnderUnunifTr(
         RvUt[1]  =  mv[1];
         UvUt[0]  =  uv[0];
         UvUt[1]  =  uv[1];
-        integOfUppTr = d_integUnderUpperTr(
-                           par_a, par_b,
-                           //
-                           lbDom, rbDom,                           //   -  Left and right boundaries of rectangular domain.
-                           //
-                           bbDom, ubDom,                           //   -  Botton and upper boundaries of rectangular domain.
-                           //
-                           tau, iCurrTL,                           //   -  Index of current time layer.
+        integOfUppTr = d_integUnderUpperTr( 
+                          iCurrTL,                           //   -  Index of current time layer.
                            //
                            LvUt, RvUt, UvUt,                       //   -  Left, Right and Botton vertices of Upper triangle.
                            //
@@ -1790,9 +1586,9 @@ __device__ double d_f_function(const int current_tl, const int i, const int j)
     dRhoDT  =  x * y * cos( c_tau*current_tl*x*y );
     dRhoDX  =  c_tau*current_tl * y * cos( c_tau*current_tl*x*y );
     dRhoDY  =  c_tau*current_tl * x * cos( c_tau*current_tl*x*y );
-    u  =  d_u_function(c_b, c_tau*current_tl, x, y );
+    u  =  d_u_function(c_tau*current_tl, x, y );
     duDX  = -c_b * y * (1.-y)  /  ( 1.  +  x * x );
-    v  =  d_v_function(c_lb, c_rb, c_bb, c_ub, c_tau*current_tl, x, y );
+    v  =  d_v_function(c_tau*current_tl, x, y );
     dvDY  =  (x - c_lb) * (x - c_rb) * (1.+c_tau*current_tl) /10. * (y - c_bb + y - c_ub);
     dvDY  =  dvDY  /  ( 1.  +  arg_v * arg_v );
     double res = dRhoDT   +   rho * duDX   +   u * dRhoDX   +   rho * dvDY   +   v * dRhoDY;
@@ -1840,22 +1636,16 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
     double* ax = init_x_y(10); //залепуха удалить
     double* ay = init_x_y(10);
 
-    double buf_D = d_integUnderUnunifTr(
-                   c_a, c_b,
-                   c_lb, c_rb,
-                   c_bb, c_ub,
-                   c_tau, current_tl,
+    double buf_D = d_integUnderUnunifTr( 
+                     current_tl,
                    first1, second1, third1,
                    ax, 10, //c_x_size,
                    ay, 10, //c_y_size,
                    prev_result,
                    i, j);
 
-    return buf_D + d_integUnderUnunifTr(
-           c_a, c_b,
-           c_lb, c_rb,                            
-           c_bb, c_ub,                              
-           c_tau, current_tl,       
+    return buf_D + d_integUnderUnunifTr( 
+            current_tl,       
            first2, second2, third2,  
            ax, 10, // c_x_size,                        
            ay, 10, //c_y_size,                          
@@ -1936,7 +1726,6 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
     cudaEventCreate(&stop);
     cudaMemcpyToSymbol(c_tau, &p->tau, sizeof(double));
     cudaMemcpyToSymbol(c_lb, &p->lb, sizeof(double));
-    cudaMemcpyToSymbol(c_a, &p->a, sizeof(double));
     cudaMemcpyToSymbol(c_b, &p->b, sizeof(double));
     cudaMemcpyToSymbol(c_rb, &p->rb, sizeof(double));
     cudaMemcpyToSymbol(c_bb, &p->bb, sizeof(double));

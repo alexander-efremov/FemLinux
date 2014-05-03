@@ -3,7 +3,6 @@
 #define CUDA_CONSTS_H_INCLUDED
 __constant__ double c_tau;
 __constant__ double c_h;
-__constant__ double c_a;
 __constant__ double c_b;
 __constant__ double c_tau_to_current_time_level;
 __constant__ double c_tau_to_h; // tau * h ( h = 1. / (p->x_size)) ;

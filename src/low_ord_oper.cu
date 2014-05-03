@@ -72,18 +72,15 @@ __device__ double d_integUnderLeftTr_OneCell(
     //
     int * indCurSqOx,                       //   -  Index of current square by Ox axis.
     int * indCurSqOy,                       //   -  Index of current square by Oy axis.
-    //
-    const double * masOX,                         //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+   
     int numOfOXSt,                          //   -  Number of OX steps.
-    //
-    const double * masOY,                         //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+   
     int numOfOYSt,                          //   -  Number of OY steps.
     //
     double * rhoInPrevTL_asV )
 {
-    //double hx = masOX[1] - masOX[0];
     double hx = c_h*1 - c_h*0;
-    double hy = masOY[1] - masOY[0];
+    double hy = c_h*1 - c_h*0;
     double integ = 0;
     double buf_D, bufInteg_D;
     double rho[2][2];
@@ -196,9 +193,9 @@ __device__ double d_integUnderRightTr_OneCell(
                indCurSqOx,                             //   -  Index of current square by Ox axis.
                indCurSqOy,                             //   -  Index of current square by Oy axis.
                //
-               masOX, numOfOXSt,                       //   -  Massive of OX steps. Dimension = numOfOXSt +1. Number of OX steps.
+                 numOfOXSt,                       //   -  Massive of OX steps. Dimension = numOfOXSt +1. Number of OX steps.
                //
-               masOY, numOfOYSt,                       //   -  Massive of OY steps. Dimension = numOfOYSt +1. Number of OY steps.
+                 numOfOYSt,                       //   -  Massive of OY steps. Dimension = numOfOYSt +1. Number of OY steps.
                //
                rhoInPrevTL_asV );
 }
@@ -546,11 +543,9 @@ __device__ double d_integOfChan_SLLeftSd(
                         //
                         indCurSqOx,                             //   -  Index of current square by Ox axis.
                         indCurSqOy,                             //   -  Index of current square by Oy axis.
-                        //
-                        masOX,                                  //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+                         
                         numOfOXSt,                              //   -  Number of OX steps.
-                        //
-                        masOY,                                  //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+                         
                         numOfOYSt,                              //   -  Number of OY steps.
                         //
                         rhoInPrevTL_asV );

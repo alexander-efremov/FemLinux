@@ -1476,8 +1476,8 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
 {
     for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
     {
-        int i = opt % c_x_st_number;
-        int j = opt / c_y_st_number;
+        int i = opt % (c_x_length + 1);
+        int j = opt / (c_y_length + 1);
        
         // расчет границы
         if (j == 0)  // bottom bound
@@ -1488,24 +1488,18 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
         {
             result[ opt ] = 1.1  +  sin( c_tau_to_h * current_tl * i * c_lb );
         }
-        else if (j == c_y_st_number - 1) // upper bound
+        else if (j == c_y_length) // upper bound
         { 
             result[ opt ] = 1.1  +  sin( c_tau_to_h * current_tl * i * c_ub );
         }
-        else if (i == c_x_st_number - 1) // right bound
+        else if (i == c_x_length) // right bound
         { 
             result[ opt ] = 1.1  +  sin(  c_tau_to_h * current_tl * j * c_rb );
         }
-        else if (i > 0 && j > 0 && j != c_y_st_number - 1 && i != c_x_st_number - 1)
+        else if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
         {
-            double sp =  space_volume_in_prev_tl(prev_result, current_tl, i, j);
-            double buf_D  =  (c_h*(i + 1)  -  c_h*(i - 1)) /2.;
-            buf_D  =  (c_h*(j + 1)  -  c_h*(j - 1)) /2.;
-            sp = sp / buf_D;
-            sp = sp / buf_D;
-            result[ opt ]  =  sp;
-            double f = d_f_function(current_tl, i,j);
-            result[ opt ] +=  c_tau * f;
+            result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j) / c_h / c_h; 
+            result[ opt ] +=  c_tau * d_f_function(current_tl, i, j);
         }
     }
 }
@@ -1528,8 +1522,8 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
 {
     assert(p != NULL);
     assert(p->result != NULL);
-   const int gridSize = 256;
-   const int blockSize =  512;
+    const int gridSize = 256;
+    const int blockSize =  512;
     // const int gridSize = 1;
     // const int blockSize =  1;
     size_t n(0);
@@ -1550,11 +1544,6 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
     cudaMemcpyToSymbol(c_bb, &p->bb, sizeof(double));
     cudaMemcpyToSymbol(c_ub, &p->ub, sizeof(double));
     cudaMemcpyToSymbol(c_n, &n, sizeof(int));
-    temp_i = p->get_real_x_size();
-    cudaMemcpyToSymbol(c_x_st_number, &temp_i, sizeof(int));
-
-    temp_i = p->get_real_y_size();
-    cudaMemcpyToSymbol(c_y_st_number, &temp_i, sizeof(int));
    
     temp_i = p->x_size;
     cudaMemcpyToSymbol(c_x_length, &temp_i, sizeof(int));
@@ -1585,15 +1574,15 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
     }
     else
     {
-    int tl = 0;
-    int tempTl = p->t_count - 1;  
-    while(tl < tempTl)
-    {
-        kernel<<<gridSize, blockSize>>>(prev_result, result, tl + 1);
-        kernel<<<gridSize, blockSize>>>(result, prev_result, tl + 2);         
-        tl += 2;            
-    }  
-    cudaMemcpy(p->result, prev_result, size, cudaMemcpyDeviceToHost);
+        int tl = 0;
+        int tempTl = p->t_count - 1;  
+        while(tl < tempTl)
+        {
+            kernel<<<gridSize, blockSize>>>(prev_result, result, tl + 1);
+            kernel<<<gridSize, blockSize>>>(result, prev_result, tl + 2);         
+            tl += 2;            
+        }  
+        cudaMemcpy(p->result, prev_result, size, cudaMemcpyDeviceToHost);
      }
     
     cudaEventRecord(stop, 0);

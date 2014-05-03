@@ -368,7 +368,7 @@ TEST_F(gputest, get_quad_coord_te)
 
 TEST_F(gputest, main_test)
 {
-    const int finishLevel = 1;
+    const int finishLevel = 9;
     const int startLevel = 0;
     const double error = 1.0e-8;
 
@@ -377,23 +377,22 @@ TEST_F(gputest, main_test)
         std::cout << "level = " << level << std::endl;
         ComputeParameters *p = new ComputeParameters(level, true);
         ASSERT_TRUE(p->result != NULL);
-        ASSERT_TRUE(p->t_count == 50);
         float gpu_time = solve_at_gpu(p, false);
         ASSERT_TRUE(gpu_time != -1);
         double *data = _modelDataProvider.GetModelData(level);
-        printf("%s\n", "cpu");
-        print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
-        printf("%s\n", "gpu");
-        print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result);
+        // printf("%s\n", "cpu");
+        // print_matrix(p->get_real_x_size(), p->get_real_y_size(), data, 5);
+        // printf("%s\n", "gpu");
+        // print_matrix(p->get_real_x_size(), p->get_real_y_size(), p->result, 5);
 
-        /*printf("%s\n", "Diff...");
-        double *diff = new double[p->get_real_matrix_size()];
-        for (int i = 0; i < p->get_real_matrix_size(); i++)
-        {
-            diff[i] = fabs(data[i] - p->result[i]);
-        }
-        print_matrix(p->get_real_x_size(), p->get_real_y_size(), diff);
-        delete diff;*/
+        //  printf("%s\n", "Diff...");
+        // double *diff = new double[p->get_real_matrix_size()];
+        // for (int i = 0; i < p->get_real_matrix_size(); i++)
+        // {
+        //     diff[i] = fabs(data[i] - p->result[i]);
+        // }
+        // print_matrix(p->get_real_x_size(), p->get_real_y_size(), diff, 5);
+        // delete diff; 
         printf("%s\n", "Start testing...");
 
         for (int i = 0; i < p->get_real_matrix_size(); i++)

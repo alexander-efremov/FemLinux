@@ -15,6 +15,4 @@ __constant__ double c_pi_half;
 __constant__ int c_x_length;
 __constant__ int c_y_length;
 __constant__ int c_n;
-__constant__ int c_x_st_number;
-__constant__ int c_y_st_number;
 #endif

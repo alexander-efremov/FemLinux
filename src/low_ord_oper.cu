@@ -1016,8 +1016,8 @@ __device__ double d_integUnderRigAngTr_UppLeft(
     int indRB[2];                                         //   -  Index of right boundary.
     double distOx, distOy;                                //   -  Distance to near Ox and Oy straight lines.
     bool isTrDone = false;                                //   -  Is travel done.
-    double hx = masOX[1] - masOX[0];
-    double hy = masOY[1] - masOY[0];
+    double hx = c_h;
+    double hy = c_h;
     double integOfUppTr = 0.;                             //   -  Value which we are computing.
     double buf_D;
     //   Initial data.

@@ -407,6 +407,46 @@ TEST_F(gputest, main_test)
 }
 
 
+TEST_F(gputest, main_test_te)
+{
+    const int finishLevel = 9;
+    const int startLevel = 0;
+    const double error = 1.0e-8;
+
+    for (int level = startLevel; level < finishLevel; ++level)
+    {
+        std::cout << "level = " << level << std::endl;
+        ComputeParameters *p = new ComputeParameters(level, true);
+        ASSERT_TRUE(p->result != NULL);
+        
+        printf("Start GPU\n");
+        float gpu_time = solve_at_gpu(p, false);
+        printf("End GPU\n");
+
+        printf("Start CPU\n");
+        StartTimer();
+        double* data = GetCpuToLevel(level);
+        time_cpu = GetTimer();
+		printf("End CPU\n");
+        
+        printf("CPU time is = %f\n", time_cpu);
+        printf("GPU time is = %f\n", time_gpu);
+        printf("CPU/GPU = %f\n", time_cpu / time_gpu);
+
+        printf("%s\n", "Start checking...");
+
+        for (int i = 0; i < p->get_real_matrix_size(); i++)
+        {
+            ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
+        }
+
+        delete p;
+
+        delete data;
+    }
+}
+
+
 
 TEST_F(gputest, main_test_1tl_boundaries)
 {

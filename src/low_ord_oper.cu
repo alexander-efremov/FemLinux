@@ -81,7 +81,8 @@ __device__ double d_integUnderLeftTr_OneCell(
     //
     double * rhoInPrevTL_asV )
 {
-    double hx = masOX[1] - masOX[0];
+    //double hx = masOX[1] - masOX[0];
+    double hx = c_h*1 - c_h*0;
     double hy = masOY[1] - masOY[0];
     double integ = 0;
     double buf_D, bufInteg_D;

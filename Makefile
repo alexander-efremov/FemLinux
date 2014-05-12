@@ -6,7 +6,7 @@ NVCC := $(CUDA_PATH)/bin/nvcc -ccbin g++
 
 # internal flags
 NVCCFLAGS   := -m64 -O2
-CCFLAGS     := -O2 -fopenmp
+CCFLAGS     := -O2
 LDFLAGS     := 
 
 
@@ -37,7 +37,7 @@ ALL_LDFLAGS += $(addprefix -Xlinker ,$(EXTRA_LDFLAGS))
 
 INCLUDES  := -I./include -I./include/gtest
 LIBRARIES :=
-LIBRARIES += -lgtest -lgtest_main -lgomp
+LIBRARIES += -lgtest -lgtest_main
 
 ################################################################################
 

@@ -3,18 +3,19 @@
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
 #include "model_data_provider.h"
+#include <iostream>
+#include <fstream>
 #include <assert.h>     /* assert */
 #ifndef COMMON_H_INCLUDED
 #include "common.h"
 #endif
-#define FULL_TEST false
+#define FULL_TEST true
+using namespace std;
 
 class TestBase : public testing::Test
 {
 protected:
     double _accuracy;
-
-
 
     ModelDataProvider _modelDataProvider;
 
@@ -88,6 +89,36 @@ protected:
             }
             printf("\n");
         }
+    }
+
+    void print_matrix_to_file(int n, int m, double *data, std::string file_name, int precision = 8)
+    {
+        
+        FILE * pFile;
+   
+
+        pFile = fopen (file_name.c_str(), "w");
+    
+        
+   
+   
+
+        for (int i = 0; i < n; ++i)
+        {
+            for (int j = 0; j < m; ++j)
+            {
+                int k = i * n + j;
+                switch (precision)
+                {
+                
+                case 8:
+                   fprintf (pFile, "%.8f ", data[k]);
+                    break;
+                }
+            } 
+		fprintf (pFile, "\n ");
+        }
+      fclose (pFile);
     }
 };
 
@@ -368,7 +399,7 @@ TEST_F(gputest, get_quad_coord_te)
 
 TEST_F(gputest, main_test)
 {
-    const int finishLevel = 9;
+    const int finishLevel = 1;
     const int startLevel = 0;
     const double error = 1.0e-8;
 
@@ -392,7 +423,7 @@ TEST_F(gputest, main_test)
         //     diff[i] = fabs(data[i] - p->result[i]);
         // }
         // print_matrix(p->get_real_x_size(), p->get_real_y_size(), diff, 5);
-        // delete diff; 
+        // delete diff;
         printf("%s\n", "Start testing...");
 
         for (int i = 0; i < p->get_real_matrix_size(); i++)
@@ -401,8 +432,7 @@ TEST_F(gputest, main_test)
         }
 
         delete p;
-
-        delete data;
+        delete[] data;
     }
 }
 
@@ -412,23 +442,24 @@ TEST_F(gputest, main_test_te)
     const int finishLevel = 9;
     const int startLevel = 0;
     const double error = 1.0e-8;
+    double time_cpu = -1;
 
     for (int level = startLevel; level < finishLevel; ++level)
     {
         std::cout << "level = " << level << std::endl;
         ComputeParameters *p = new ComputeParameters(level, true);
         ASSERT_TRUE(p->result != NULL);
-        
+
         printf("Start GPU\n");
-        float gpu_time = solve_at_gpu(p, false);
+        float time_gpu = solve_at_gpu(p, false);
         printf("End GPU\n");
 
         printf("Start CPU\n");
         StartTimer();
-        double* data = GetCpuToLevel(level);
+        double *data = GetCpuToLevel(level);
         time_cpu = GetTimer();
-		printf("End CPU\n");
-        
+        printf("End CPU\n");
+
         printf("CPU time is = %f\n", time_cpu);
         printf("GPU time is = %f\n", time_gpu);
         printf("CPU/GPU = %f\n", time_cpu / time_gpu);
@@ -441,8 +472,7 @@ TEST_F(gputest, main_test_te)
         }
 
         delete p;
-
-        delete data;
+        delete[] data;
     }
 }
 
@@ -476,7 +506,7 @@ TEST_F(gputest, main_test_1tl_boundaries)
     }
 
     delete p;
-    delete data;
+    delete[] data;
 }
 
 TEST_F(gputest, main_test_1tl_inner)
@@ -510,16 +540,75 @@ TEST_F(gputest, main_test_1tl_inner)
     }
 
     delete p;
-    delete data;
+    delete[] data;
 }
 
 TEST_F(gputest, gen_1tl)
 {
     const int finishLevel = 1;
-    const int startLevel = 0;
     const double error = 1.0e-8;
     double *tl1 = GetCpuToLevel(0);
+    delete[] tl1;
     //print_matrix(11, 11, tl1);
+}
+
+// This is the test checks that gpu and cpu results are equal for first 
+// time layer
+TEST_F(gputest, gen_1tl_7)
+{
+    const int finishLevel = 1;
+    const double error = 1.0e-8;
+    std::cout << "level = " << 7 << std::endl;
+    ComputeParameters *p = new ComputeParameters(7, true);
+    double *data = GetCpuToLevel(7, 2);
+    print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), data, "1281_1281_6400_cpu_model_1tl.txt");
+    
+    ASSERT_TRUE(p->result != NULL);
+
+    printf("Start GPU\n");
+    //float time_gpu = solve_at_gpu(p, true);
+    printf("End GPU\n");
+	//for (int i = 0; i < p->get_real_matrix_size(); i++)
+        {
+    //        ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
+        }
+    delete[] data;
+    delete p; 
+}
+
+
+TEST_F(gputest, get_1281_result)
+{
+    const int finishLevel = 1;
+    const double error = 1.0e-8;
+    std::cout << "level = " << 7 << std::endl;
+    ComputeParameters *p = new ComputeParameters(7, true);
+    double *data = GetCpuToLevel(7);
+    print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), data, "1281_1281_6400_cpu_model.txt");
+    delete[] data;
+    delete p; 
+}
+
+
+TEST_F(gputest, get_error_for_level)
+{
+    const int level = 7;
+
+    ComputeParameters *p = new ComputeParameters(level, true);
+    ASSERT_TRUE(p->result != NULL);
+    float gpu_time = solve_at_gpu(p, false);
+    double *data = _modelDataProvider.GetModelData(level);
+    //printf("%d\n", p->get_real_matrix_size());
+    double *diff = new double[p->get_real_matrix_size()];
+    for (int i = 0; i < p->get_real_matrix_size(); ++i)
+    {
+        diff[i] = fabs(p->result[i] - data[i]);
+    }
+  //  print_matrix(p->get_real_x_size(), p->get_real_y_size(), diff);
+    print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), diff, "test.txt");
+
+    delete p;
+    delete[] diff;
 }
 
 TEST_F(gputest, gen_2tl)
@@ -528,5 +617,6 @@ TEST_F(gputest, gen_2tl)
     const int startLevel = 0;
     const double error = 1.0e-8;
     double *tl1 = GetCpuToLevel(0);
+    delete[] tl1;
     //print_matrix(11, 11, tl1);
 }

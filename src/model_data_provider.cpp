@@ -38,6 +38,8 @@ double* ModelDataProvider::GetModelData1tl(int type)
 	{
 		case 0:
 			return reader.ReadMatrixFromTextFile("data/11_11_50_cpu_model_1tl.txt", 11,11);
+		case 7:
+			return reader.ReadMatrixFromTextFile("data/1281_1281_6400_cpu_model_1tl.txt", 1281,1281);
 	}
 	return NULL;
 }

@@ -112,7 +112,7 @@ protected:
                 {
                 
                 case 8:
-                   fprintf (pFile, "%.8f ", data[k]);
+                   fprintf (pFile, "%le ", data[k]);
                     break;
                 }
             } 
@@ -560,7 +560,7 @@ TEST_F(gputest, gen_1tl_7)
     const double error = 1.0e-8;
     std::cout << "level = " << 7 << std::endl;
     ComputeParameters *p = new ComputeParameters(7, true);
-    double *data = GetCpuToLevel(7, 2);
+    double *data = GetCpuToLevel(7);
     print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), data, "1281_1281_6400_cpu_model_1tl.txt");
     
     ASSERT_TRUE(p->result != NULL);
@@ -590,22 +590,25 @@ TEST_F(gputest, get_1281_result)
 }
 
 
-TEST_F(gputest, get_error_for_level)
+TEST_F(gputest, get_error_for_1281_1tl)
 {
     const int level = 7;
-
+    const double error = 1.0e-15;
     ComputeParameters *p = new ComputeParameters(level, true);
     ASSERT_TRUE(p->result != NULL);
-    float gpu_time = solve_at_gpu(p, false);
-    double *data = _modelDataProvider.GetModelData(level);
+    float gpu_time = solve_at_gpu(p, true);
+//    double *data = _modelDataProvider.GetModelData1tl(level);
+    double *data = GetCpuToLevel(level);
+    //print_matrix(p->get_real_x_size(), p->get_real_y_size(), data);
     //printf("%d\n", p->get_real_matrix_size());
     double *diff = new double[p->get_real_matrix_size()];
     for (int i = 0; i < p->get_real_matrix_size(); ++i)
     {
         diff[i] = fabs(p->result[i] - data[i]);
+  ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
     }
   //  print_matrix(p->get_real_x_size(), p->get_real_y_size(), diff);
-    print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), diff, "test.txt");
+    print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), diff, "diff_1281.txt");
 
     delete p;
     delete[] diff;

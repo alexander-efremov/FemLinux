@@ -2726,7 +2726,7 @@ double solByEqualVolumes(
         cout << "SchOrd = " << numOfSolOrd << ", Nx = " << numOfOXSt;
         cout << ", count of time levels " << numOfTSt;
     }
-    // numOfTSt = 1;
+    numOfTSt = 1;
     for ( iCurrTL = 1; iCurrTL < numOfTSt + 1; iCurrTL++ )
     {
         if (canPrint)
@@ -2772,12 +2772,35 @@ double solByEqualVolumes(
                                     //
                                     iOfOYN, masOY, numOfOYSt, //   -  OY data.
                                     rhoInPrevTL_asV );
+                if (iOfOYN == 1 && iOfOXN == 6)
+                {
+            	    printf("cpu result [1287] %.16lf\n", spVolInPrevTL);                                    
+		}
 
                 buf_D = (masOX[iOfOXN + 1] - masOX[iOfOXN - 1]) / 2.;
+                if (iOfOYN == 1 && iOfOXN == 6)
+                {
+            	    printf("cpu buf_D 1 %.16lf\n", buf_D);                                    
+		}
                 spVolInPrevTL = spVolInPrevTL / buf_D;
+                if (iOfOYN == 1 && iOfOXN == 6)
+                {
+            	    printf("cpu result [1287] / c_h %.16lf\n", spVolInPrevTL);                                    
+		}
                 buf_D = (masOY[iOfOYN + 1] - masOY[iOfOYN - 1]) / 2.;
+                if (iOfOYN == 1 && iOfOXN == 6)
+                {
+            	    printf("cpu buf_D 2 %.16lf\n", buf_D);                                    
+		}
                 spVolInPrevTL = spVolInPrevTL / buf_D;
-
+                if (iOfOYN == 1 && iOfOXN == 6)
+                {
+            	    printf("cpu result [1287] / c_h %.16lf\n", spVolInPrevTL);                                    
+		}
+                
+                
+                
+            	
                 RPInCurrTL = f_function(par_a, par_b, lbDom, rbDom, bbDom, ubDom, tau, iCurrTL, iOfOXN,
                                         masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
                                         numOfOXSt, //   -  Number of OX steps.
@@ -2788,6 +2811,22 @@ double solByEqualVolumes(
 
                 rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] = spVolInPrevTL;
                 rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] += tau * RPInCurrTL;
+                if (iOfOYN == 1 && iOfOXN == 6)
+                {
+            	
+            	    printf("cpu result [1287] with subtraction %.16lf\n", spVolInPrevTL);
+                    printf("cpu tau %.16lf\n", tau);
+            	    printf("cpu f_function %.16lf\n", RPInCurrTL);
+            	    	    printf("cpu tau*f_function %.16lf\n", tau*f_function(par_a, par_b, lbDom, rbDom, bbDom, ubDom, tau, iCurrTL, iOfOXN,
+                                        masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+                                        numOfOXSt, //   -  Number of OX steps.
+                                        //
+                                        iOfOYN, //   -  Index of current OY node.
+                                        masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+                                        numOfOYSt )); //   -  Number of OY steps.);
+            	                	    printf("cpu result[1287] + tau*f_function %.16lf\n", rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ]);
+
+                }
             }
         }
 

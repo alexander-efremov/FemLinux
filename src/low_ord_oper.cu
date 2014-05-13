@@ -1497,9 +1497,30 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
             result[ opt ] = 1.1  +  sin(  c_tau_to_h * current_tl * j * c_rb );
         }
         else if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
-        {
-            result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j) / c_h / c_h; 
-            result[ opt ] +=  c_tau * d_f_function(current_tl, i, j);
+        {        
+          result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j);
+            if (opt == 1287)
+            {
+        	printf("gpu result[ 1287 ] = %.16lf\n", result [ opt ]);
+        	printf("gpu c_h = %.16lf\n", c_h);
+        	double tt = result [ 1287 ] / c_h;
+        	printf("gpu result [ 1287 ] / c_h = %.16lf\n", tt);
+        	printf("gpu result [ 1287 ] / c_h / c_h = %.16lf\n", tt/c_h);
+            }
+          
+            result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j) / c_h / c_h;
+            if (opt == 1287)
+            {
+        	printf("gpu result[ 1287 ] with subtraction  = %.16lf\n", result [ opt ]);
+            }
+            result[ opt ] = result[opt] + c_tau * d_f_function(current_tl, i, j);
+            if (opt == 1287)
+            {
+            	printf("gpu c_tau = %.16lf\n", c_tau);            
+            	printf("gpu d_f_function = %.16lf\n", d_f_function(current_tl,i,j));
+            	printf("gpu c_tau * d_f_function = %.16lf\n", c_tau*d_f_function(current_tl, i,j));
+        	printf("gpu c_tau*d_f_function + result[ 1287 ] = %.16lf\n", result [ opt ]);
+            }
         }
     }
 }
@@ -1524,8 +1545,8 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
     assert(p->result != NULL);
     const int gridSize = 256;
     const int blockSize =  512;
-    // const int gridSize = 1;
-    // const int blockSize =  1;
+//    const int gridSize = 1;
+//    const int blockSize =  1;
     size_t n(0);
     int temp_i(0);
     double temp_d(0);

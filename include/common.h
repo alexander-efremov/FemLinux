@@ -262,7 +262,7 @@ public:
 
 	int get_real_matrix_size()
 	{
-		return (get_real_x_size()) * (get_real_y_size());
+		return get_real_x_size() * get_real_y_size();
 	}
 
 	// получает размер внутренней матрицы
@@ -302,40 +302,6 @@ public:
 		return output;
 	}
 };
-
-
-//struct Triangle
-//{
-//	double first[2];
-//	double second[2];
-//	double third[2];
-//
-//	friend std::ostream &operator<<( std::ostream &output,
-//	                                 const Triangle &tr )
-//	{
-//		output << "First Point: ";
-//		output << "x: " << tr.first[0] << " y: " << tr.first[1] << std::endl;
-//		output << "Second Point: ";
-//		output << "x: " << tr.second[0] << " y: " << tr.second[1] << std::endl;
-//		output << "Third Point: ";
-//		output << "x: " << tr.third[0] << " y: " << tr.third[1] << std::endl;
-//		return output;
-//	}
-//
-//	friend bool operator==(const Triangle& x, const Triangle& y)
-//	{
-//		double const error = 10e-16;
-//		bool p1 = (fabs(x.first[0] - y.first[0] ) < error) && (fabs(x.first[1] - y.first[1] )< error);
-//
-//		bool p2 = (fabs(x.second[0] - y.second[0] ) < error) && (fabs(x.second[1] - y.second[1])< error);
-//
-//		bool p3 = (fabs(x.third[0] - y.third[0] ) < error) && (fabs(x.third[1] - y.third[1] )< error);
-//
-//
-//		return p1 && p2 && p3;
-//	}
-//};
-
 
 struct TriangleResult
 {

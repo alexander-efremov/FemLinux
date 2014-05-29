@@ -282,14 +282,14 @@ protected:
 
 TEST_F(gputest, main_test)
 {
-    const int finishLevel = 1;
+    const int finishLevel = 8;
     const int startLevel = 0;
     const bool isComputeDiff = true;
     const bool isOneTl = true;
 
     for (int level = startLevel; level < finishLevel; ++level)
     {
-        ComputeParameters *p = new ComputeParameters(level, true, true);
+        ComputeParameters *p = new ComputeParameters(level, true, isComputeDiff);
         ASSERT_TRUE(p->result != NULL);
         std::cout << *p << std::endl;
 
@@ -305,9 +305,17 @@ TEST_F(gputest, main_test)
             ASSERT_NEAR(data[i], p->result[i], __FLT_EPSILON__) << "i = " <<  i << std::endl;
         }
 
+std::ostringstream oss; 
+ 
+char *s = "diff_"; 
+oss<<s<<level<<endl; 
+
+std::string name(oss.str());
+
+
 if (isComputeDiff)
 {
-  print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->diff, "diff.txt"); 
+  print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->diff, name); 
 }
         
 

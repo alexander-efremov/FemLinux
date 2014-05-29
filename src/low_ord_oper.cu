@@ -1475,9 +1475,24 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
 
 __global__ void kernel_diff(double *diff, double *result,  int tl)
 {
+
 	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
-	{
-		int i = opt % (c_x_length + 1);
+	{ 
+if (opt == 1)
+{
+
+for (int i = 0; i < 11; i++)
+{
+   for(int j = 0; j < 11 ; j++)
+{
+   printf("%le ", result[i*11 + j]);
+}
+   printf("\n");
+}
+
+
+}
+	/*	int i = opt % (c_x_length + 1);
 		int j = opt / (c_y_length + 1);
 		double f = 0;
 		diff [opt] = f;
@@ -1497,7 +1512,7 @@ __global__ void kernel_diff(double *diff, double *result,  int tl)
 
 
 		}
-
+*/
 	}	   
 }
 
@@ -1632,7 +1647,15 @@ float solve_at_gpu(ComputeParameters *p, bool tl1, bool compute_diff)
 	{
 		int ttt = tl1 ? 1 : p->t_count;
 		printf("[gpu] compute diff t = %d\n", ttt);	
-		kernel_diff<<<gridSize, blockSize>>>(d_diff, prev_result, ttt);
+if (tl1)
+		
+{ 
+kernel_diff<<<1, 1>>>(d_diff, result, ttt);
+}
+else
+{
+kernel_diff<<<1, 1>>>(d_diff, prev_result, ttt);
+}
 		cudaMemcpy(p->diff, d_diff, size, cudaMemcpyDeviceToHost);
 	}	
 

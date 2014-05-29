@@ -113,8 +113,6 @@ public:
 	int y_size;
 	int i;
 	int j;
-	double *x;
-	double *y;
 	double *result;
 	double currentTimeLevel;
 
@@ -136,22 +134,12 @@ public:
 		t_count = C_numOfTSt * value;
 
 
-		x = new double[n + 1];
 		x_size = n;
 
-		for (int j = 0; j < n + 1; j++)
-		{
-			x[j] = C_lbDom + ((double) j) * buf_D;
-		}
 
 
 		int m = C_numOfOYSt * value;
 		buf_D = (C_ubDom - C_bbDom) / m;
-		y = new double[m + 1];
-		for (int k = 0; k < m + 1; k++)
-		{
-			y[k] = C_bbDom + ((double) k) * buf_D;
-		}
 
 		y_size = m;
 		size = (n + 1) * (m + 1);
@@ -300,56 +288,6 @@ public:
 		output << "x size = " << tr.x_size << std::endl;
 		output << "y size = " << tr.y_size << std::endl;
 		return output;
-	}
-};
-
-struct TriangleResult
-{
-private:
-	int chunk;
-
-public:
-
-	double* first1; 
-	double* second1;
-	double* third1;
-
-	double* first2;
-	double* second2; 
-	double* third2;
-	int length;
-	int x_length;
-	int y_length;
-	int currentTimeLevel;
-	int offset;
-
-	TriangleResult(ComputeParameters* param)
-	{
-		currentTimeLevel =param->currentTimeLevel;
-		x_length = param->x_size - 1;
-		y_length = param->y_size - 1;
-		chunk = param->get_inner_chuck_size();
-		first1 = new double[ 2*param->get_inner_matrix_size()];
-		first2 = new double[ 2*param->get_inner_matrix_size()];
-		second1 = new double[2*param->get_inner_matrix_size()];
-		second2 = new double[2*param->get_inner_matrix_size()];
-		third1 = new double[ 2*param->get_inner_matrix_size()];
-		third2 = new double[ 2*param->get_inner_matrix_size()];
-	}
-
-	~TriangleResult()
-	{
-		delete[] first1 ;
-		delete[] first2 ;
-		delete[] second1;
-		delete[] second2;
-		delete[] third1 ;
-		delete[] third2 ;
-	}
-
-	void setOffset(int part_index)
-	{
-		offset = part_index * chunk;
 	}
 };
 

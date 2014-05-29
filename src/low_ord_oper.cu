@@ -1501,22 +1501,8 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
             result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j);
             double t = space_volume_in_prev_tl(prev_result, current_tl, i, j) / c_h;
             t = t / c_h;
-            if (opt == 16)
-            { 
-               printf("gpu result[%d] = %le\n", opt, t);
-               printf("c_h = %le\n", c_h);
-               printf("i = %d, j = %d\n", i, j);
-	       printf("c_h*i = %le c_h*j = %le\n", c_h*i, c_h*j);
-               printf("current tl = %d\n", current_tl);
-               double tmp =  d_analytSolut(current_tl, c_h*i, c_h*j);
-               printf("gpu analytSolut = %le\n", tmp);
-            }
             result[ opt ] = t;
             result[ opt ] += c_tau * d_f_function(current_tl, i, j);
-            if (opt == 16)
-            {
-               printf("gpu result[%d] = %le\n", opt, result[opt]);
-            } 
         }
     }
 }
@@ -1539,10 +1525,10 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
 {
     assert(p != NULL);
     assert(p->result != NULL);
-    //const int gridSize = 256;
-    //const int blockSize =  512;
-    const int gridSize = 1;
-    const int blockSize =  1;
+    const int gridSize = 256;
+    const int blockSize =  512;
+    //const int gridSize = 1;
+    //const int blockSize =  1;
     size_t n(0);
     int temp_i(0);
     double temp_d(0);

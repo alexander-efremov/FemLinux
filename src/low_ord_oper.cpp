@@ -2792,25 +2792,10 @@ double solByEqualVolumes(
                                         masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
                                         numOfOYSt ); //   -  Number of OY steps.
 
-                rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] = spVolInPrevTL;
-                
-                if (iOfOXN == 5 && iOfOYN == 1)
-                {
-                  printf("cpu result[%d] = %le\n", (numOfOXSt + 1)*iOfOYN + iOfOXN, rhoInCurrTL_asV[(numOfOXSt + 1)*iOfOYN + iOfOXN]);
-                  printf("masOX[%d] = %le masOY[%d] =%le\n", iOfOXN, masOX[iOfOXN], iOfOYN, masOY[iOfOYN]);
-                  printf("i = %d, j = %d\n", iOfOXN, iOfOYN);
-                  printf("t = %d\n", iCurrTL);
-		  double tmp = analytSolut(iCurrTL, masOX[iOfOXN], masOY[iOfOYN]);
-                  printf("cpu analySolut = %le\n", tmp);
-                } 
-     
- 
+               rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] = spVolInPrevTL;
                rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] += tau * RPInCurrTL;
-               if (iOfOXN == 5 && iOfOYN == 1)
-               {
-                 printf("cpu result = %le\n", rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] );
-               }
-            }
+               
+           }
         }
 
         for ( iOfThr = 0; iOfThr < (numOfOXSt + 1) * (numOfOYSt + 1); iOfThr++ )

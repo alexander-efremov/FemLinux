@@ -1505,6 +1505,7 @@ for (int i = 0; i < 11; i++)
 
 			diff [opt] = abs(result[opt] - f);    
 			if (i == 1 && j == 1)
+
 			{
 				printf("f = %le result[opt] = %le diff[opt] = %le opt = %d\n", f, result[opt], diff[opt], opt);
 			} 

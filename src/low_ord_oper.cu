@@ -1483,9 +1483,19 @@ __global__ void kernel_diff(double *diff, double *result,  int tl)
 		diff [opt] = f;
 		if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
 		{ 
-			f = d_analytSolut(tl, i*c_h, j*c_h);     
+
+			f = d_analytSolut(tl, i*c_h, j*c_h) /c_h /c_h;     
+
+			f += c_tau * d_f_function(tl, i, j);
 
 			diff [opt] = abs(result[opt] - f);    
+			if (i == 1 && j == 1)
+			{
+				printf("f = %le result[opt] = %le diff[opt] = %le opt = %d\n", f, result[opt], diff[opt], opt);
+			} 
+
+
+
 		}
 
 	}	   
@@ -1620,9 +1630,9 @@ float solve_at_gpu(ComputeParameters *p, bool tl1, bool compute_diff)
 
 	if (compute_diff)
 	{
-                int ttt = tl1 ? 1 : p->t_count;
+		int ttt = tl1 ? 1 : p->t_count;
 		printf("[gpu] compute diff t = %d\n", ttt);	
-                kernel_diff<<<gridSize, blockSize>>>(d_diff, prev_result, ttt);
+		kernel_diff<<<gridSize, blockSize>>>(d_diff, prev_result, ttt);
 		cudaMemcpy(p->diff, d_diff, size, cudaMemcpyDeviceToHost);
 	}	
 

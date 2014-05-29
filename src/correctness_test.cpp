@@ -401,16 +401,18 @@ TEST_F(gputest, main_test)
 {
     const int finishLevel = 1;
     const int startLevel = 0;
-    const double error = 1.0e-8;
+    
 
     for (int level = startLevel; level < finishLevel; ++level)
     {
         std::cout << "level = " << level << std::endl;
         ComputeParameters *p = new ComputeParameters(level, true);
         ASSERT_TRUE(p->result != NULL);
-        float gpu_time = solve_at_gpu(p, false);
+        float gpu_time = solve_at_gpu(p, true);
         ASSERT_TRUE(gpu_time != -1);
-        double *data = _modelDataProvider.GetModelData(level);
+//printf("t count = %d", p->t_count);
+//        double *data = _modelDataProvider.GetModelData(level);
+        double *data = GetCpuToLevel(level, 1);
         // printf("%s\n", "cpu");
         // print_matrix(p->get_real_x_size(), p->get_real_y_size(), data, 5);
         // printf("%s\n", "gpu");
@@ -428,7 +430,8 @@ TEST_F(gputest, main_test)
 
         for (int i = 0; i < p->get_real_matrix_size(); i++)
         {
-            ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
+            //ASSERT_NEAR(data[i], p->result[i], __FLT_EPSILON__) << "i = " <<  i << std::endl;
+            ASSERT_DOUBLE_EQ(data[i], p->result[i]) << "i = " <<  i << std::endl;
         }
 
         delete p;
@@ -468,7 +471,7 @@ TEST_F(gputest, main_test_te)
 
         for (int i = 0; i < p->get_real_matrix_size(); i++)
         {
-            ASSERT_TRUE(fabs(data[i] - p->result[i]) <= error) << i << " " << data[i] << " " << p->result[i] << std::endl;
+            ASSERT_DOUBLE_EQ(data[i], p->result[i]);
         }
 
         delete p;

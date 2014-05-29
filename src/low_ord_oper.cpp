@@ -40,6 +40,12 @@ double itemOfInteg_1SpecType(
 }
 
 double analytSolut(
+    double t, double x, double y )
+{
+    return 1.1 + sin( t * x * y);
+}
+
+double analytSolut(
     double par_a,
     //
     double lbDom, //   -  Left and right boundaries of rectangular domain.
@@ -2772,34 +2778,11 @@ double solByEqualVolumes(
                                     //
                                     iOfOYN, masOY, numOfOYSt, //   -  OY data.
                                     rhoInPrevTL_asV );
-                if (iOfOYN == 1 && iOfOXN == 6)
-                {
-            	    printf("cpu result [1287] %.16lf\n", spVolInPrevTL);                                    
-		}
 
                 buf_D = (masOX[iOfOXN + 1] - masOX[iOfOXN - 1]) / 2.;
-                if (iOfOYN == 1 && iOfOXN == 6)
-                {
-            	    printf("cpu buf_D 1 %.16lf\n", buf_D);                                    
-		}
                 spVolInPrevTL = spVolInPrevTL / buf_D;
-                if (iOfOYN == 1 && iOfOXN == 6)
-                {
-            	    printf("cpu result [1287] / c_h %.16lf\n", spVolInPrevTL);                                    
-		}
                 buf_D = (masOY[iOfOYN + 1] - masOY[iOfOYN - 1]) / 2.;
-                if (iOfOYN == 1 && iOfOXN == 6)
-                {
-            	    printf("cpu buf_D 2 %.16lf\n", buf_D);                                    
-		}
                 spVolInPrevTL = spVolInPrevTL / buf_D;
-                if (iOfOYN == 1 && iOfOXN == 6)
-                {
-            	    printf("cpu result [1287] / c_h %.16lf\n", spVolInPrevTL);                                    
-		}
-                
-                
-                
             	
                 RPInCurrTL = f_function(par_a, par_b, lbDom, rbDom, bbDom, ubDom, tau, iCurrTL, iOfOXN,
                                         masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
@@ -2810,23 +2793,23 @@ double solByEqualVolumes(
                                         numOfOYSt ); //   -  Number of OY steps.
 
                 rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] = spVolInPrevTL;
-                rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] += tau * RPInCurrTL;
-                if (iOfOYN == 1 && iOfOXN == 6)
+                
+                if (iOfOXN == 5 && iOfOYN == 1)
                 {
-            	
-            	    printf("cpu result [1287] with subtraction %.16lf\n", spVolInPrevTL);
-                    printf("cpu tau %.16lf\n", tau);
-            	    printf("cpu f_function %.16lf\n", RPInCurrTL);
-            	    	    printf("cpu tau*f_function %.16lf\n", tau*f_function(par_a, par_b, lbDom, rbDom, bbDom, ubDom, tau, iCurrTL, iOfOXN,
-                                        masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-                                        numOfOXSt, //   -  Number of OX steps.
-                                        //
-                                        iOfOYN, //   -  Index of current OY node.
-                                        masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-                                        numOfOYSt )); //   -  Number of OY steps.);
-            	                	    printf("cpu result[1287] + tau*f_function %.16lf\n", rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ]);
-
-                }
+                  printf("cpu result[%d] = %le\n", (numOfOXSt + 1)*iOfOYN + iOfOXN, rhoInCurrTL_asV[(numOfOXSt + 1)*iOfOYN + iOfOXN]);
+                  printf("masOX[%d] = %le masOY[%d] =%le\n", iOfOXN, masOX[iOfOXN], iOfOYN, masOY[iOfOYN]);
+                  printf("i = %d, j = %d\n", iOfOXN, iOfOYN);
+                  printf("t = %d\n", iCurrTL);
+		  double tmp = analytSolut(iCurrTL, masOX[iOfOXN], masOY[iOfOYN]);
+                  printf("cpu analySolut = %le\n", tmp);
+                } 
+     
+ 
+               rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] += tau * RPInCurrTL;
+               if (iOfOXN == 5 && iOfOYN == 1)
+               {
+                 printf("cpu result = %le\n", rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] );
+               }
             }
         }
 

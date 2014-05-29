@@ -7,11 +7,12 @@
 #include "hemi.h"
 #include "common.h"
 #include "cuda_constant.cuh"
+#include <float.h>
 
 
 __device__ double d_u_function(double t, double x,
                                         double y) {
-                                            return c_b * y * (1. - y) * (C_pi_device / 2. + atan(-x));
+                                            return c_b * y * (1. - y) * (M_PI / 2. + atan(-x));
 }
 
 __device__ double d_v_function(double t, double x, double y) {
@@ -1515,7 +1516,7 @@ double* init_rho(ComputeParameters *p)
     //   Initial data of rho.
     for( int k = 0; k <= p->x_size; k++ ) {
         for( int j = 0; j <= p->y_size; j++ ) {
-            rhoInPrevTL_asV[ (p->x_size+1)*k + j ]  =  1.1  +  sin( 0.* p->x[ k ] * p->y[ j ]);
+            rhoInPrevTL_asV[ (p->x_size+1)*k + j ]  =  1.1;
         }
     }
     return rhoInPrevTL_asV;
@@ -1561,7 +1562,7 @@ float solve_at_gpu(ComputeParameters *p, bool tl1)
     temp_d = p->b * p->tau;
     cudaMemcpyToSymbol(c_tau_b, &temp_d, sizeof(double));
 
-    temp_d = C_pi_device / 2.;
+    temp_d = M_PI / 2.;
     cudaMemcpyToSymbol(c_pi_half, &temp_d, sizeof(double));
     
     checkCuda(cudaMalloc((void**)&(result), size) );

@@ -51,9 +51,6 @@ all: build
 
 build: test_fixture
 
-get_quad_coord.o: src/get_quad_coord.cu
-	$(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
-
 low_ord_oper.o: src/low_ord_oper.cpp
 	$(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
@@ -73,9 +70,8 @@ gtest_main.o: src/gtest_main.cc
 	$(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
 
-test_fixture: get_quad_coord.o gtest_main.o low_ord_oper.o low_ord_oper_cuda.o	model_data_provider.o file_reader.o correctness_test.o
+test_fixture: gtest_main.o low_ord_oper.o low_ord_oper_cuda.o model_data_provider.o file_reader.o correctness_test.o
 	$(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
-
 
 run: build
 	./test_fixture

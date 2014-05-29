@@ -1499,9 +1499,9 @@ for (int i = 0; i < 11; i++)
 		if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
 		{ 
 
-			f = d_analytSolut(tl, i*c_h, j*c_h) /c_h /c_h;     
+			f = d_analytSolut(tl, i*c_h, j*c_h);     
 
-			f += c_tau * d_f_function(tl, i, j);
+		//	f += c_tau * d_f_function(tl, i, j);
 
 			diff [opt] = abs(result[opt] - f);    
 			if (i == 1 && j == 1)

@@ -25,3 +25,4 @@ test_fixture
 ._Makefile
 bin/
 pf_test/
+diff_*

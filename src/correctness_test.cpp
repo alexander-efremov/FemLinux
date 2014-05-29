@@ -282,18 +282,21 @@ protected:
 
 TEST_F(gputest, main_test)
 {
-    const int finishLevel = 8;
+    const int finishLevel = 1;
     const int startLevel = 0;
+    const bool isComputeDiff = true;
+    const bool isOneTl = true;
 
     for (int level = startLevel; level < finishLevel; ++level)
     {
-        ComputeParameters *p = new ComputeParameters(level, true);
+        ComputeParameters *p = new ComputeParameters(level, true, true);
         ASSERT_TRUE(p->result != NULL);
         std::cout << *p << std::endl;
 
-        float gpu_time = solve_at_gpu(p, true);
+        float gpu_time = solve_at_gpu(p, isOneTl, isComputeDiff);
         ASSERT_TRUE(gpu_time != -1);
-        double *data = GetCpuToLevel(level, 1);
+
+        double *data = GetCpuToLevel(level, isOneTl ? 1 : p->t_count);
        
         printf("%s\n", "Start testing...");
 
@@ -302,7 +305,13 @@ TEST_F(gputest, main_test)
             ASSERT_NEAR(data[i], p->result[i], __FLT_EPSILON__) << "i = " <<  i << std::endl;
         }
 
-        delete p;
+if (isComputeDiff)
+{
+  print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->diff, "diff.txt"); 
+}
+        
+
+delete p;
         delete[] data;
     }
 }

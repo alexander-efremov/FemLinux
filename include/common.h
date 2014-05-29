@@ -159,10 +159,6 @@ struct ComputeParameters
 				delete[] diff;
 		}
 
-		int get_inner_chuck_size()
-		{
-			return get_chunk_size() - 2;
-		}
 
 		void reset_time_counter()
 		{
@@ -190,59 +186,6 @@ struct ComputeParameters
 			return y_size + 1;
 		}
 
-		int get_chunk_size()
-		{
-			int size = get_real_x_size();
-			if (size == 11)
-			{
-				return size;
-			}
-
-			if (size == 21)
-			{
-				return size;
-			}
-			else if (size == 41)
-			{
-				return size;
-			}
-			else if (size == 81)
-			{
-				return size;
-			}
-			else if (size == 161)
-			{
-				return size;
-			}
-			else if (size == 321)
-			{
-				return size;
-			}
-			else if (size == 641)
-			{
-				return size;
-			}
-			else if (size == 1281)
-			{
-				return size;
-			}
-			else if (size == 2561)
-			{
-				return size;
-			}
-			else if (size == 5121)
-			{
-				return size;
-				//return size*569; // 5121 / 9 = 569 - столько ядер запустится для расчета триангуляции
-			}
-			else if (size == 10242)
-			{
-				return size;
-				//return size*569; // 5121 / 9 = 569 - столько ядер запустится для расчета триангуляции
-			}
-			return 0;
-		}
-
 		// получает размер внутренней матрицы
 		int get_inner_matrix_size()
 		{
@@ -261,16 +204,9 @@ struct ComputeParameters
 		}
 
 
-		int get_part_count()
-		{
-			int chunk_size = get_inner_chuck_size();
-			int inner_matrix_size = get_inner_matrix_size();
-			return (int) ( inner_matrix_size % chunk_size == 0 ? inner_matrix_size / chunk_size : inner_matrix_size / chunk_size + 1);
-		}
-
 		void print_info()
 		{
-			std::cout << "chunk = " << get_chunk_size() << " current time level " << currentTimeLevel << std::endl;
+			std::cout << "current time level " << currentTimeLevel << std::endl;
 		}
 
 
@@ -672,7 +608,8 @@ extern double analytSolut(
 		double ubDom,
 		//
 		double t, double x, double y );
-extern float solve_at_gpu(ComputeParameters* p, bool tl1);
+extern float solve_at_gpu(ComputeParameters* p, bool tl1, bool compute_diff = false);
+
 
 extern void cuda_solve(
 		double par_a, //   -  Item of left and right setback (parameter "a" in test).

@@ -24,4 +24,4 @@ test_fixture
 # Misc
 ._Makefile
 bin/
-test_fp/
+pf_test/

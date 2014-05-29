@@ -1478,7 +1478,7 @@ __global__ void kernel_diff(double *diff, double *result,  int tl)
 
 	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
 	{ 
-if (opt == 1)
+/*if (opt == 1)
 {
 
 for (int i = 0; i < 11; i++)
@@ -1491,8 +1491,8 @@ for (int i = 0; i < 11; i++)
 }
 
 
-}
-	/*	int i = opt % (c_x_length + 1);
+}*/
+		int i = opt % (c_x_length + 1);
 		int j = opt / (c_y_length + 1);
 		double f = 0;
 		diff [opt] = f;
@@ -1512,7 +1512,7 @@ for (int i = 0; i < 11; i++)
 
 
 		}
-*/
+
 	}	   
 }
 

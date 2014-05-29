@@ -1501,7 +1501,7 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
             result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j);
             double t = space_volume_in_prev_tl(prev_result, current_tl, i, j) / c_h;
             t = t / c_h;
-            if (opt == 16)
+            if (opt == 12)
             { 
                printf("gpu result[%d] = %le\n", opt, t);
                printf("c_h = %le\n", c_h);
@@ -1513,7 +1513,7 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
             }
             result[ opt ] = t;
             result[ opt ] += c_tau * d_f_function(current_tl, i, j);
-            if (opt == 16)
+            if (opt == 12)
             {
                printf("gpu result[%d] = %le\n", opt, result[opt]);
             } 

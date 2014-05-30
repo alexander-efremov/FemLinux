@@ -282,10 +282,10 @@ class gputest : public TestBase
 
 TEST_F(gputest, main_test)
 {
-	const int finishLevel = 1;
+	const int finishLevel = 8;
 	const int startLevel = 0;
 	const bool isComputeDiff = true;
-	const bool isOneTl = true;
+	const bool isOneTl = false;
 
 	for (int level = startLevel; level < finishLevel; ++level)
 	{

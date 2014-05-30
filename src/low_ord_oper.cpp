@@ -2732,7 +2732,7 @@ double solByEqualVolumes(
         cout << "SchOrd = " << numOfSolOrd << ", Nx = " << numOfOXSt;
         cout << ", count of time levels " << numOfTSt;
     }
-    numOfTSt = 1;
+//    numOfTSt = 1;
     for ( iCurrTL = 1; iCurrTL < numOfTSt + 1; iCurrTL++ )
     {
         if (canPrint)

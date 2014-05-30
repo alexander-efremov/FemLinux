@@ -290,7 +290,7 @@ TEST_F(gputest, main_test)
 
 	for (int level = startLevel; level < finishLevel; ++level)
 	{
-
+std::cout << "level = " << level << std::endl;
 		double *data = NULL;
 
 		ComputeParameters *p = new ComputeParameters(level, true, isComputeDiff);
@@ -334,7 +334,7 @@ TEST_F(gputest, main_test)
 
 TEST_F(gputest, main_test_te)
 {
-	const int finishLevel = 9;
+	const int finishLevel = 3;
 	const int startLevel = 0;
 	
 	double time_cpu = -1;
@@ -345,6 +345,8 @@ TEST_F(gputest, main_test_te)
 		std::cout << "level = " << level << std::endl;
 		ComputeParameters *p = new ComputeParameters(level, true);
 		ASSERT_TRUE(p->result != NULL);
+                
+std::cout << *p << std::endl;
 
 		printf("Start GPU\n");
 		time_gpu = solve_at_gpu(p, false);

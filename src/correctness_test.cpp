@@ -325,7 +325,6 @@ std::cout << "level = " << level << std::endl;
 			print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->diff, name); 
 		}
 
-
 		delete p;
 		delete[] data;
 	}

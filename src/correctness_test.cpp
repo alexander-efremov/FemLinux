@@ -283,7 +283,7 @@ class gputest : public TestBase
 
 TEST_F(gputest, main_test)
 {
-	const int finishLevel = 8;
+	const int finishLevel = 888888888888888888888888888888888888888888888888888888888888888888888888888888;
 	const int startLevel = 0;
 	const bool isComputeDiff = true;
 	const bool isOneTl = false;
@@ -318,7 +318,7 @@ TEST_F(gputest, main_test)
 		std::ostringstream oss; 
 
 		char *s = "diff_gpu_"; 
-		oss << s << level + 1 << ".bin"; 
+		oss << s << p->t_count << ".bin"; 
 
 		std::string name(oss.str());
 

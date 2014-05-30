@@ -1503,7 +1503,7 @@ for (int i = 0; i < 11; i++)
 
 		//	f += c_tau * d_f_function(tl, i, j);
 
-			diff [opt] = abs(result[opt] - f);    
+			diff [opt] = fabs(result[opt] - f);    
 			if (i == 1 && j == 1)
 
 			{       

@@ -138,7 +138,7 @@ class cputest : public TestBase
 		{
 			return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
 					C_ubDom, C_tau, C_numOfTSt, masOX, C_numOfOXSt, masOY,
-					C_numOfOYSt, level);
+					C_numOfOYSt, level, false);
 		}
 
 };
@@ -264,26 +264,26 @@ class gputest : public TestBase
 		{
 		}
 
-		double *GetCpuToLevel(int level)
+		double *GetCpuToLevel(int level, bool isComputeDiff = false)
 		{
 
 			return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
 					C_ubDom, C_tau, C_numOfTSt, masOX, C_numOfOXSt, masOY,
-					C_numOfOYSt, level);
+					C_numOfOYSt, level, isComputeDiff);
 		}
 
 
-		double *GetCpuToLevel1TL(int level)
+		double *GetCpuToLevel1TL(int level, bool isComputeDiff)
 		{
 			return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
 					C_ubDom, C_tau, 1, masOX, C_numOfOXSt, masOY,
-					C_numOfOYSt, level);
+					C_numOfOYSt, level, isComputeDiff);
 		}
 };
 
 TEST_F(gputest, main_test)
 {
-	const int finishLevel = 888888888888888888888888888888888888888888888888888888888888888888888888888888;
+	const int finishLevel = 8;
 	const int startLevel = 0;
 	const bool isComputeDiff = true;
 	const bool isOneTl = false;
@@ -300,9 +300,9 @@ TEST_F(gputest, main_test)
 		float gpu_time = solve_at_gpu(p, isOneTl, isComputeDiff);
 		ASSERT_TRUE(gpu_time != -1);
 		if (isOneTl)
-		{		data = GetCpuToLevel1TL(level); }
+		{		data = GetCpuToLevel1TL(level, isComputeDiff); }
 		else
-		{  data = GetCpuToLevel(level); }
+		{  data = GetCpuToLevel(level, isComputeDiff); }
 
 
 		//	        data = _modelDataProvider.GetModelData(level);

@@ -2709,7 +2709,7 @@ void print_matrix_to_file(int n, int m, double *data, std::string file_name)
 void compute_diff_write_to_file( double *result, int tl, int n, int m)
 {
 double c_h = 1. / n;
-printf("[cpu] c_h = %le\n", c_h);
+/*printf("[cpu] c_h = %le\n", c_h);
 printf("[cpu] matrix \n");
 
 for (int i = 0; i < 11; i++)
@@ -2719,7 +2719,7 @@ for (int i = 0; i < 11; i++)
    printf("%le ", result[i*11 + j]);
 }
    printf("\n");
-}
+}*/
 
 // let's find the diff and then write a result into file diff.bin
 	double *diff = new double[(n + 1) * (m + 1)]();
@@ -2741,14 +2741,14 @@ for (int i = 0; i < 11; i++)
 			        
 				double f = analytSolut(tl, i*c_h, j*c_h);     
 				diff [opt] = fabs(result[opt] - f); 
-				 if (i == 1 && j == 1)
+				/* if (i == 1 && j == 1)
 
 			{       
   printf("[cpu] result[opt] - f = %le\n", result[opt] - f);
 printf("[cpu] abs(result[opt] - f) = %le\n", fabs(result[opt] - f));
                                 printf("[cpu] tl = %d\n", tl);
 				printf("[cpu] f = %le result[opt] = %le diff[opt] = %le opt = %d\n", f, result[opt], diff[opt], opt);
-			} 
+			} */
 
 
 	}
@@ -2892,7 +2892,7 @@ double solByEqualVolumes(
 	delete[] rhoInPrevTL_asV;
 
 	
-	compute_diff_write_to_file(rhoInCurrTL_asV, numOfTSt, numOfOXSt  , numOfOYSt);
+	
 
 
 
@@ -2917,7 +2917,7 @@ double *solve_cpu_test(
 		//
 		double *masOY,
 		int numOfOYSt,
-		int gridStep)
+		int gridStep, bool isComputeDiff)
 {
 	double varTau = tau;
 	int varNumOfTSt = numOfTSt;
@@ -2976,6 +2976,8 @@ double *solve_cpu_test(
 			//
 			rhoInCurrTL_asV ); //   -  Rho (solution) in Current (Last) Time Level.
 
+if (isComputeDiff)
+compute_diff_write_to_file(rhoInCurrTL_asV, varNumOfTSt, varNumOfOXSt  , varNumOfOYSt);
 
 	delete[] varMasOX;
 	delete[] varMasOY;

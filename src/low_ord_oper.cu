@@ -1504,12 +1504,12 @@ for (int i = 0; i < 11; i++)
 		//	f += c_tau * d_f_function(tl, i, j);
 
 			diff [opt] = fabs(result[opt] - f);    
-			if (i == 1 && j == 1)
+/*			if (i == 1 && j == 1)
 
 			{       
                                 printf("tl = %d\n", tl);
 				printf("f = %le result[opt] = %le diff[opt] = %le opt = %d\n", f, result[opt], diff[opt], opt);
-			} 
+			} */
 
 
 

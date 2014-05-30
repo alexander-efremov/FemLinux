@@ -413,8 +413,8 @@ extern double solByEqualVolumes(
 				//
 				double * masOY, //   -  Massive of OY nodes. Dimension = numOfOYSt +1.
 				int numOfOYSt, //   -  Number of OY steps.
-				int gridStep
-				);
+				int gridStep,
+				bool isComputeDiff);
 
 		extern double spaceVolumeInPrevTL(
 				double par_a, //   -  Item of left and right setback (parameter "a" in test).

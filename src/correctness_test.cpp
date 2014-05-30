@@ -290,7 +290,7 @@ TEST_F(gputest, main_test)
 
 	for (int level = startLevel; level < finishLevel; ++level)
 	{
-std::cout << "level = " << level << std::endl;
+                std::cout << "level = " << level << std::endl;
 		double *data = NULL;
 
 		ComputeParameters *p = new ComputeParameters(level, true, isComputeDiff);
@@ -333,7 +333,7 @@ std::cout << "level = " << level << std::endl;
 
 TEST_F(gputest, main_test_te)
 {
-	const int finishLevel = 3;
+	const int finishLevel = 8;
 	const int startLevel = 0;
 	
 	double time_cpu = -1;

@@ -2810,7 +2810,7 @@ double solByEqualVolumes(
 		cout << ", count of time levels " << numOfTSt;
 	}
 	//    numOfTSt = 1;
-	printf("[cpu] time count = %d\n", numOfTSt);
+	//printf("[cpu] time count = %d\n", numOfTSt);
 	for ( iCurrTL = 1; iCurrTL < numOfTSt + 1; iCurrTL++ )
 	{
 		if (canPrint)

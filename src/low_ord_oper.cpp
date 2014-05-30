@@ -2733,6 +2733,7 @@ double solByEqualVolumes(
         cout << ", count of time levels " << numOfTSt;
     }
 //    numOfTSt = 1;
+printf("[cpu] time count = %d\n", numOfTSt);
     for ( iCurrTL = 1; iCurrTL < numOfTSt + 1; iCurrTL++ )
     {
         if (canPrint)
@@ -2765,6 +2766,9 @@ double solByEqualVolumes(
         {
             for ( iOfOXN = 1; iOfOXN < numOfOXSt; iOfOXN++ )
             {
+
+                int opt = (numOfOXSt + 1)*iOfOYN + iOfOXN;
+ 
                 spVolInPrevTL = spaceVolumeInPrevTL(
                                     par_a, par_b, //   -  Items of parameters.
                                     //
@@ -2778,6 +2782,10 @@ double solByEqualVolumes(
                                     //
                                     iOfOYN, masOY, numOfOYSt, //   -  OY data.
                                     rhoInPrevTL_asV );
+/* if (opt == 22)
+{
+ printf("[cpu] result = %le\n", spVolInPrevTL);
+}*/
 
                 buf_D = (masOX[iOfOXN + 1] - masOX[iOfOXN - 1]) / 2.;
                 spVolInPrevTL = spVolInPrevTL / buf_D;
@@ -2792,8 +2800,8 @@ double solByEqualVolumes(
                                         masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
                                         numOfOYSt ); //   -  Number of OY steps.
 
-               rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] = spVolInPrevTL;
-               rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + iOfOXN ] += tau * RPInCurrTL;
+               rhoInCurrTL_asV[ opt ] = spVolInPrevTL;
+               rhoInCurrTL_asV[ opt ] += tau * RPInCurrTL;
                
            }
         }

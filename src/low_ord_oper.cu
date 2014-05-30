@@ -1545,6 +1545,10 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
 		else if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
 		{        
 			result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j);
+/*if (opt == 22)
+{
+ printf("[gpu] result = %le\n", result[opt]);
+}*/
 			double t = space_volume_in_prev_tl(prev_result, current_tl, i, j) / c_h;
 			t = t / c_h;
 			result[ opt ] = t;

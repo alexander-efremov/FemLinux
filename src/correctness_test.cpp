@@ -266,16 +266,17 @@ class gputest : public TestBase
 
 		double *GetCpuToLevel(int level)
 		{
+
 			return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
 					C_ubDom, C_tau, C_numOfTSt, masOX, C_numOfOXSt, masOY,
 					C_numOfOYSt, level);
 		}
 
 
-		double *GetCpuToLevel(int level, int tl_count)
+		double *GetCpuToLevel1TL(int level)
 		{
 			return solve_cpu_test(C_par_a, C_par_b, C_lbDom, C_rbDom, C_bbDom,
-					C_ubDom, C_tau, tl_count, masOX, C_numOfOXSt, masOY,
+					C_ubDom, C_tau, 1, masOX, C_numOfOXSt, masOY,
 					C_numOfOYSt, level);
 		}
 };
@@ -289,14 +290,23 @@ TEST_F(gputest, main_test)
 
 	for (int level = startLevel; level < finishLevel; ++level)
 	{
+
+		double *data = NULL;
+
 		ComputeParameters *p = new ComputeParameters(level, true, isComputeDiff);
 		ASSERT_TRUE(p->result != NULL);
 		std::cout << *p << std::endl;
 
 		float gpu_time = solve_at_gpu(p, isOneTl, isComputeDiff);
 		ASSERT_TRUE(gpu_time != -1);
+		if (isOneTl)
+		{		data = GetCpuToLevel1TL(level); }
+		else
+		{  data = GetCpuToLevel(level); }
 
-		double *data = GetCpuToLevel(level, isOneTl ? 1 : p->t_count);
+
+		//	        data = _modelDataProvider.GetModelData(level);
+
 
 		printf("%s\n", "Start testing...");
 
@@ -308,10 +318,9 @@ TEST_F(gputest, main_test)
 		std::ostringstream oss; 
 
 		char *s = "diff_gpu_"; 
-		oss<<s<<level+1 << ".bin"; 
+		oss << s << level + 1 << ".bin"; 
 
 		std::string name(oss.str());
-
 
 		if (isComputeDiff)
 		{

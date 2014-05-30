@@ -304,16 +304,14 @@ TEST_F(gputest, main_test)
 		else
 		{  data = GetCpuToLevel(level, isComputeDiff); }
 
+		// data = _modelDataProvider.GetModelData(level);
 
-		//	        data = _modelDataProvider.GetModelData(level);
-
-
-		printf("%s\n", "Start testing...");
-
+		printf("%s\n", "Checking is started");
 		for (int i = 0; i < p->get_real_matrix_size(); i++)
 		{
 			ASSERT_NEAR(data[i], p->result[i], __FLT_EPSILON__) << "i = " <<  i << std::endl;
 		}
+                printf("%s\n\n", "Checking is done");
 
 		std::ostringstream oss; 
 
@@ -338,8 +336,9 @@ TEST_F(gputest, main_test_te)
 {
 	const int finishLevel = 9;
 	const int startLevel = 0;
-	const double error = 1.0e-8;
+	
 	double time_cpu = -1;
+        float time_gpu = -1;
 
 	for (int level = startLevel; level < finishLevel; ++level)
 	{
@@ -348,7 +347,7 @@ TEST_F(gputest, main_test_te)
 		ASSERT_TRUE(p->result != NULL);
 
 		printf("Start GPU\n");
-		float time_gpu = solve_at_gpu(p, false);
+		time_gpu = solve_at_gpu(p, false);
 		printf("End GPU\n");
 
 		printf("Start CPU\n");
@@ -361,14 +360,15 @@ TEST_F(gputest, main_test_te)
 		printf("GPU time is = %f\n", time_gpu);
 		printf("CPU/GPU = %f\n", time_cpu / time_gpu);
 
-		printf("%s\n", "Start checking...");
+		printf("%s\n", "Checking is started");
 
 		for (int i = 0; i < p->get_real_matrix_size(); i++)
 		{
-			ASSERT_DOUBLE_EQ(data[i], p->result[i]);
+			ASSERT_NEAR(data[i], p->result[i], __FLT_EPSILON__) << "i = " <<  i << std::endl;
 		}
-
-		delete p;
+                printf("%s\n\n", "Checking is done");
+		
+                delete p;
 		delete[] data;
 	}
 }

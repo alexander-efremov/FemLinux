@@ -333,8 +333,9 @@ TEST_F(gputest, main_test)
 
 TEST_F(gputest, main_test_te)
 {
-	const int finishLevel = 8;
-	const int startLevel = 0;
+	const int finishLevel = 10;
+	const int startLevel = 8;
+	const bool isComputeDiff = true;
 	
 	double time_cpu = -1;
         float time_gpu = -1;
@@ -345,7 +346,7 @@ TEST_F(gputest, main_test_te)
 		ComputeParameters *p = new ComputeParameters(level, true);
 		ASSERT_TRUE(p->result != NULL);
                 
-std::cout << *p << std::endl;
+                std::cout << *p << std::endl;
 
 		printf("Start GPU\n");
 		time_gpu = solve_at_gpu(p, false);
@@ -369,6 +370,16 @@ std::cout << *p << std::endl;
 		}
                 printf("%s\n\n", "Checking is done");
 		
+ 		char *s = "diff_gpu_"; 
+		oss << s << p->t_count << ".bin"; 
+
+		std::string name(oss.str());
+
+		if (isComputeDiff)
+		{
+			print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->diff, name); 
+		}
+
                 delete p;
 		delete[] data;
 	}

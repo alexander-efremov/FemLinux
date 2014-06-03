@@ -2695,9 +2695,7 @@ void print_matrix_to_file(int n, int m, double *data, std::string file_name)
 				{
 					int k = i * n + j;
 					
-
-							fprintf (pFile, "%le ", data[k]);
-							
+					fprintf (pFile, "%20.14le ", data[k]);							
 					
 
 				} 
@@ -2706,7 +2704,7 @@ void print_matrix_to_file(int n, int m, double *data, std::string file_name)
 			fclose (pFile);
 		}
 
-void compute_diff_write_to_file( double *result, int tl, int n, int m)
+void compute_diff_write_to_file( double *result, int tl, int n, int m, double tau)
 {
 double c_h = 1. / n;
 /*printf("[cpu] c_h = %le\n", c_h);
@@ -2732,14 +2730,14 @@ for (int i = 0; i < 11; i++)
 
 		std::string name(oss.str());
 
-		for ( int j = 1; j < m; j++ )
+		for ( int j = 0; j <= m; j++ )
 		{
-			for ( int i = 1; i < n; i++ )
+			for ( int i = 0; i <= n; i++ )
 			{
 
 				int opt = (n + 1)*j+ i;
 			        
-				double f = analytSolut(tl, i*c_h, j*c_h);     
+				double f = analytSolut(tl*tau, i*c_h, j*c_h);     
 				diff [opt] = fabs(result[opt] - f); 
 				/* if (i == 1 && j == 1)
 
@@ -2977,7 +2975,7 @@ double *solve_cpu_test(
 			rhoInCurrTL_asV ); //   -  Rho (solution) in Current (Last) Time Level.
 
 if (isComputeDiff)
-compute_diff_write_to_file(rhoInCurrTL_asV, varNumOfTSt, varNumOfOXSt  , varNumOfOYSt);
+ compute_diff_write_to_file(rhoInCurrTL_asV, varNumOfTSt, varNumOfOXSt  , varNumOfOYSt, varTau);
 
 	delete[] varMasOX;
 	delete[] varMasOY;

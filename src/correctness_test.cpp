@@ -112,7 +112,7 @@ class TestBase : public testing::Test
 					{
 
 						case 8:
-							fprintf (pFile, "%le ", data[k]);
+							fprintf (pFile, "%20.14le ", data[k]);
 							break;
 					}
 				} 
@@ -283,7 +283,8 @@ class gputest : public TestBase
 
 TEST_F(gputest, main_test)
 {
-	const int finishLevel = 8;
+
+	const int finishLevel = 7;
 	const int startLevel = 0;
 	const bool isComputeDiff = true;
 	const bool isOneTl = false;
@@ -325,6 +326,21 @@ TEST_F(gputest, main_test)
 			print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->diff, name); 
 		}
 
+		std::ostringstream oss1; 
+		char *s1 = "gpu_result_"; 
+		oss1 << s1 << p->t_count << ".bin"; 
+		std::string name1(oss1.str());
+
+		print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->result, name1); 
+	
+
+		std::ostringstream oss2; 
+		char *s2 = "cpu_result_"; 
+		oss2 << s2 << p->t_count << ".bin"; 
+		std::string name2(oss2.str());
+
+		print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), data, name2); 
+
 		delete p;
 		delete[] data;
 	}
@@ -333,9 +349,9 @@ TEST_F(gputest, main_test)
 
 TEST_F(gputest, main_test_te)
 {
-	const int finishLevel = 10;
-	const int startLevel = 8;
-	const bool isComputeDiff = true;
+	const int finishLevel = 9;
+	const int startLevel = 0;
+	const bool isComputeDiff = false;
 	
 	double time_cpu = -1;
         float time_gpu = -1;
@@ -343,7 +359,7 @@ TEST_F(gputest, main_test_te)
 	for (int level = startLevel; level < finishLevel; ++level)
 	{
 		std::cout << "level = " << level << std::endl;
-		ComputeParameters *p = new ComputeParameters(level, true);
+		ComputeParameters *p = new ComputeParameters(level, true, isComputeDiff);
 		ASSERT_TRUE(p->result != NULL);
                 
                 std::cout << *p << std::endl;
@@ -354,31 +370,13 @@ TEST_F(gputest, main_test_te)
 
 		printf("Start CPU\n");
 		StartTimer();
-		double *data = GetCpuToLevel(level);
+		double *data = GetCpuToLevel(level, isComputeDiff);
 		time_cpu = GetTimer();
 		printf("End CPU\n");
 
 		printf("CPU time is = %f\n", time_cpu);
 		printf("GPU time is = %f\n", time_gpu);
 		printf("CPU/GPU = %f\n", time_cpu / time_gpu);
-
-		printf("%s\n", "Checking is started");
-
-		for (int i = 0; i < p->get_real_matrix_size(); i++)
-		{
-			ASSERT_NEAR(data[i], p->result[i], __FLT_EPSILON__) << "i = " <<  i << std::endl;
-		}
-                printf("%s\n\n", "Checking is done");
-		
- 		char *s = "diff_gpu_"; 
-		oss << s << p->t_count << ".bin"; 
-
-		std::string name(oss.str());
-
-		if (isComputeDiff)
-		{
-			print_matrix_to_file(p->get_real_x_size(), p->get_real_y_size(), p->diff, name); 
-		}
 
                 delete p;
 		delete[] data;

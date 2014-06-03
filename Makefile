@@ -5,8 +5,8 @@ CUDA_PATH  ?= /usr/local/cuda-6.0
 NVCC := $(CUDA_PATH)/bin/nvcc -ccbin g++
 
 # internal flags
-NVCCFLAGS   := -m64 -O0
-CCFLAGS     := -m64 -O0
+NVCCFLAGS   := -m64 -O2
+CCFLAGS     := -m64 -O2
 LDFLAGS     := 
 
 

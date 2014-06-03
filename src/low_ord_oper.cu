@@ -1473,7 +1473,7 @@ __device__ double space_volume_in_prev_tl(double* prev_result, int current_tl, i
 			i, j );
 }
 
-__global__ void kernel_diff(double *diff, double *result,  int tl)
+__global__ void kernel_diff(double *diff, double *result,  int tl, double tau)
 {
 
 	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
@@ -1496,10 +1496,10 @@ for (int i = 0; i < 11; i++)
 		int j = opt / (c_y_length + 1);
 		double f = 0;
 		diff [opt] = f;
-		if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
-		{ 
+	//	if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
+	//	{ 
 
-			f = d_analytSolut(tl, i*c_h, j*c_h);     
+			f = d_analytSolut(tl*tau, i*c_h, j*c_h);     
 
 		//	f += c_tau * d_f_function(tl, i, j);
 
@@ -1513,7 +1513,7 @@ for (int i = 0; i < 11; i++)
 
 
 
-		}
+	//	}
 
 	}	   
 }
@@ -1656,11 +1656,11 @@ float solve_at_gpu(ComputeParameters *p, bool tl1, bool compute_diff)
 if (tl1)
 		
 { 
-kernel_diff<<<1, 1>>>(d_diff, result, ttt);
+kernel_diff<<<1, 1>>>(d_diff, result, ttt, p->tau);
 }
 else
 {
-kernel_diff<<<1, 1>>>(d_diff, prev_result, ttt);
+kernel_diff<<<1, 1>>>(d_diff, prev_result, ttt, p->tau);
 }
 		cudaMemcpy(p->diff, d_diff, size, cudaMemcpyDeviceToHost);
 	}	

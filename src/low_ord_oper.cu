@@ -1520,53 +1520,6 @@ for (int i = 0; i < 11; i++)
 
 __global__ void kernel(double* prev_result, double* result, int current_tl)
 {
-<<<<<<< HEAD
-    for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
-    {
-        int i = opt % (c_x_length + 1);
-        int j = opt / (c_y_length + 1);
-       
-        // расчет границы
-        if (j == 0)  // bottom bound
-        {
-            result[ opt ]  = 1.1  +  sin( c_tau_to_h * current_tl * j * c_bb );
-        }
-        else if (i == 0) // left bound
-        {
-            result[ opt ] = 1.1  +  sin( c_tau_to_h * current_tl * i * c_lb );
-        }
-        else if (j == c_y_length) // upper bound
-        { 
-            result[ opt ] = 1.1  +  sin( c_tau_to_h * current_tl * i * c_ub );
-        }
-        else if (i == c_x_length) // right bound
-        { 
-            result[ opt ] = 1.1  +  sin(  c_tau_to_h * current_tl * j * c_rb );
-        }
-        else if (i > 0 && j > 0 && j != c_x_length && i != c_x_length)
-        {        
-            result[ opt ] = space_volume_in_prev_tl(prev_result, current_tl, i, j);
-            double t = space_volume_in_prev_tl(prev_result, current_tl, i, j) / c_h;
-            t = t / c_h;
-            if (opt == 12)
-            { 
-               printf("gpu result[%d] = %le\n", opt, t);
-               printf("c_h = %le\n", c_h);
-               printf("i = %d, j = %d\n", i, j);
-	       printf("c_h*i = %le c_h*j = %le\n", c_h*i, c_h*j);
-               printf("current tl = %d\n", current_tl);
-               double tmp =  d_analytSolut(current_tl, c_h*i, c_h*j);
-               printf("gpu analytSolut = %le\n", tmp);
-            }
-            result[ opt ] = t;
-            result[ opt ] += c_tau * d_f_function(current_tl, i, j);
-            if (opt == 12)
-            {
-               printf("gpu result[%d] = %le\n", opt, result[opt]);
-            } 
-        }
-    }
-=======
 	for (int opt = blockIdx.x * blockDim.x + threadIdx.x; opt < c_n; opt += blockDim.x * gridDim.x)
 	{
 		int i = opt % (c_x_length + 1);
@@ -1602,7 +1555,6 @@ __global__ void kernel(double* prev_result, double* result, int current_tl)
 			result[ opt ] += c_tau * d_f_function(current_tl, i, j);
 		}
 	}
->>>>>>> branch1
 }
 
 double* init_rho(ComputeParameters *p)

@@ -3,6 +3,7 @@
 *.lo
 *.o
 *.obj
+*.bin
 
 # Compiled Dynamic libraries
 *.so
@@ -19,10 +20,11 @@
 *.exe
 *.out
 *.app
-test_fixture
+test_fixture*
 
 # Misc
 ._Makefile
 bin/
 pf_test/
 diff_*
+

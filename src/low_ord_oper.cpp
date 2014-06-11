@@ -5,6 +5,10 @@
 #include <iomanip>
 #include <stdlib.h>
 
+#ifdef _OPENMP
+ #include <omp.h>
+#endif
+
 #define C_pi_device 3.14159265358979323846264338327
 
 using namespace std;
@@ -2834,8 +2838,13 @@ double solByEqualVolumes(
 			rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN ] = leftBound( par_a, lbDom, rbDom, bbDom, ubDom, tau * iCurrTL, masOY[ iOfOYN ] );
 			rhoInCurrTL_asV[ (numOfOXSt + 1)*iOfOYN + numOfOXSt ] = rightBound( par_a, lbDom, rbDom, bbDom, ubDom, tau * iCurrTL, masOY[ iOfOYN ] );
 		}
+#ifdef _OPENMP
+	omp_set_num_threads(24);				
+#endif	
 
-
+#ifdef _OPENMP        	
+ 	#pragma omp parallel for collapse(2) private(buf_D, spVolInPrevTL, RPInCurrTL)	
+#endif	
 		//   Enumeration from first unknown element to last one.
 		for ( iOfOYN = 1; iOfOYN < numOfOYSt; iOfOYN++ )
 		{

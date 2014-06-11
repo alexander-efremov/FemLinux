@@ -384,6 +384,47 @@ TEST_F(gputest, main_test_te)
 }
 
 
+TEST_F(gputest, errors_test)
+{
+   const int finishLevel = 1;
+   const int startLevel = 0;
+   
+  for (int level = 0; level < finishLevel; level++)
+  { 
+    
+  }	
+	
+}
+
+
+TEST_F(gputest, main_test_openmp)
+{
+	const int finishLevel = 9;
+	const int startLevel = 0;
+	const bool isComputeDiff = false;
+	
+	double time_cpu = -1;
+
+	for (int level = startLevel; level < finishLevel; ++level)
+	{
+		std::cout << "level = " << level << std::endl;
+		ComputeParameters *p = new ComputeParameters(level, true, isComputeDiff);
+		ASSERT_TRUE(p->result != NULL);               
+                std::cout << *p << std::endl;
+		delete p;		 
+
+        	printf("Start CPU\n");
+		StartTimer();
+		double *data = GetCpuToLevel(level, isComputeDiff);
+		time_cpu = GetTimer();
+		printf("End CPU\n");
+		printf("CPU OPENMP time is = %f\n", time_cpu);
+
+		delete[] data;
+	}
+}
+
+
 
 TEST_F(gputest, main_test_1tl_boundaries)
 {

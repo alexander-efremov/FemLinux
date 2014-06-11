@@ -6,9 +6,7 @@
 #include "const.h"
 #include <iostream>
 #include <math.h>
-
-#define C_pi_device 3.14159265358979323846264338327
-
+#include <float.h>
 
 static double C_lbDom = 0., C_rbDom = 1.; //   -  Left and right boundaries of rectangular domain.
 static double *masOX; //   -  Massive of OX points. Dimension = C_numOfOXSt +1.
@@ -95,32 +93,33 @@ inline void memClean()
 
 struct ComputeParameters
 {
-private:
-	int time_i;
-	bool _initresult;
-public:
-	double a;
-	double b;
-	double lb;
-	double rb;
-	double bb;
-	double ub;
-	double tau;
+	private:
+		int time_i;
+		bool _initresult;
+	public:
+		double a;
+		double b;
+		double lb;
+		double rb;
+		double bb;
+		double ub;
+		double tau;
 
-	int size;
-	int t_count;
-	int x_size;
-	int y_size;
-	int i;
-	int j;
-	double *x;
-	double *y;
-	double *result;
-	double currentTimeLevel;
+		int size;
+		int t_count;
+		int x_size;
+		int y_size;
+		int i;
+		int j;
+		double *result;
+		double currentTimeLevel;
+		double *diff;
+		bool _initdiff;
 
-	ComputeParameters(int level, bool initresult) : currentTimeLevel(1), t_count(0)
+		ComputeParameters(int level, bool initresult, bool initdiff = false) : currentTimeLevel(1), t_count(0)
 	{
 		_initresult = initresult;
+		_initdiff = initdiff;
 
 		a = C_par_a;
 		b = C_par_b;
@@ -131,226 +130,102 @@ public:
 
 		double value = pow(2., level);
 		int n = C_numOfOXSt * value;
-		double buf_D = (C_rbDom - C_lbDom) / n;
 		tau = C_tau / value;
 		t_count = C_numOfTSt * value;
 
-
-		x = new double[n + 1];
 		x_size = n;
 
-		for (int j = 0; j < n + 1; j++)
-		{
-			x[j] = C_lbDom + ((double) j) * buf_D;
-		}
-
-
 		int m = C_numOfOYSt * value;
-		buf_D = (C_ubDom - C_bbDom) / m;
-		y = new double[m + 1];
-		for (int k = 0; k < m + 1; k++)
-		{
-			y[k] = C_bbDom + ((double) k) * buf_D;
-		}
 
 		y_size = m;
 		size = (n + 1) * (m + 1);
 		result = NULL;
 		if (initresult)
-			{
-				result = new double[size];
-			}
-	}
-
-	~ComputeParameters()
-	{
-		delete[] x;
-		delete[] y;
-		if (_initresult)
-			delete[] result;
-	}
-
-	int get_inner_chuck_size()
-	{
-		return get_chunk_size() - 2;
-	}
-
-	void reset_time_counter()
-	{
-		time_i = 1;
-	}
-
-	bool can_iterate_over_time_level()
-	{
-		return time_i <= t_count;
-	}
-
-	void inc_time_level()
-	{
-		time_i++;
-	}
-
-	int get_real_x_size()
-	{
-		return x_size + 1;
-	}
-
-
-	int get_real_y_size()
-	{
-		return y_size + 1;
-	}
-
-	int get_chunk_size()
-	{
-		int size = get_real_x_size();
-		if (size == 11)
 		{
-			return size;
+			result = new double[size];
+		}
+		if (_initdiff)
+		{
+			diff = new double[size];
+		} 
+
+	}
+
+		~ComputeParameters()
+		{
+			if (_initresult)
+				delete[] result;
+			if (_initdiff)
+				delete[] diff;
 		}
 
-		if (size == 21)
+
+		void reset_time_counter()
 		{
-			return size;
+			time_i = 1;
 		}
-		else if (size == 41)
+
+		bool can_iterate_over_time_level()
 		{
-			return size;
+			return time_i <= t_count;
 		}
-		else if (size == 81)
+
+		void inc_time_level()
 		{
-			return size;
+			time_i++;
 		}
-		else if (size == 161)
+
+		int get_real_x_size()
 		{
-			return size;
+			return x_size + 1;
 		}
-		else if (size == 321)
+
+
+		int get_real_y_size()
 		{
-			return size;
+			return y_size + 1;
 		}
-		else if (size == 641)
+
+		// получает размер внутренней матрицы
+		int get_inner_matrix_size()
 		{
-			return size;
+			return (get_real_x_size() - 2) * (get_real_y_size() - 2);
 		}
-		else if (size == 1281)
+
+		int get_real_matrix_size()
 		{
-			return size;
+			return get_real_x_size() * get_real_y_size();
 		}
-		else if (size == 2561)
+
+		// получает размер внутренней матрицы
+		int get_inner_x_size()
 		{
-			return size;
+			return get_real_x_size() - 2;
 		}
-		else if (size == 5121)
+
+
+		void print_info()
 		{
-			return size;
-			//return size*569; // 5121 / 9 = 569 - столько ядер запустится для расчета триангуляции
+			std::cout << "current time level " << currentTimeLevel << std::endl;
 		}
-		else if (size == 10242)
+
+
+		friend std::ostream &operator<<( std::ostream &output,
+				const ComputeParameters &tr )
 		{
-			return size;
-			//return size*569; // 5121 / 9 = 569 - столько ядер запустится для расчета триангуляции
+			output << "a = " << tr.a << std::endl;
+			output << "b = " << tr.b << std::endl;
+			output << "lb = " << tr.lb << std::endl;
+			output << "rb = " << tr.rb << std::endl;
+			output << "bb = " << tr.bb << std::endl;
+			output << "ub = " << tr.ub << std::endl;
+			output << "size = " << tr.size << std::endl;
+			output << "tau = " << tr.tau << std::endl;
+			output << "Time levels = " << tr.t_count << std::endl;
+			output << "x size = " << tr.x_size << std::endl;
+			output << "y size = " << tr.y_size << std::endl;
+			return output;
 		}
-		return 0;
-	}
-
-	// получает размер внутренней матрицы
-	int get_inner_matrix_size()
-	{
-		return (get_real_x_size() - 2) * (get_real_y_size() - 2);
-	}
-
-	int get_real_matrix_size()
-	{
-		return get_real_x_size() * get_real_y_size();
-	}
-
-	// получает размер внутренней матрицы
-	int get_inner_x_size()
-	{
-		return get_real_x_size() - 2;
-	}
-
-
-	int get_part_count()
-	{
-		int chunk_size = get_inner_chuck_size();
-		int inner_matrix_size = get_inner_matrix_size();
-		return (int) ( inner_matrix_size % chunk_size == 0 ? inner_matrix_size / chunk_size : inner_matrix_size / chunk_size + 1);
-	}
-
-	void print_info()
-	{
-		std::cout << "chunk = " << get_chunk_size() << " current time level " << currentTimeLevel << std::endl;
-	}
-
-
-	friend std::ostream &operator<<( std::ostream &output,
-	                                 const ComputeParameters &tr )
-	{
-		output << "a = " << tr.a << std::endl;
-		output << "b = " << tr.b << std::endl;
-		output << "lb = " << tr.lb << std::endl;
-		output << "rb = " << tr.rb << std::endl;
-		output << "bb = " << tr.bb << std::endl;
-		output << "ub = " << tr.ub << std::endl;
-		output << "size = " << tr.size << std::endl;
-		output << "tau = " << tr.tau << std::endl;
-		output << "Time levels = " << tr.t_count << std::endl;
-		output << "x size = " << tr.x_size << std::endl;
-		output << "y size = " << tr.y_size << std::endl;
-		return output;
-	}
-};
-
-struct TriangleResult
-{
-private:
-	int chunk;
-
-public:
-
-	double* first1; 
-	double* second1;
-	double* third1;
-
-	double* first2;
-	double* second2; 
-	double* third2;
-	int length;
-	int x_length;
-	int y_length;
-	int currentTimeLevel;
-	int offset;
-
-	TriangleResult(ComputeParameters* param)
-	{
-		currentTimeLevel =param->currentTimeLevel;
-		x_length = param->x_size - 1;
-		y_length = param->y_size - 1;
-		chunk = param->get_inner_chuck_size();
-		first1 = new double[ 2*param->get_inner_matrix_size()];
-		first2 = new double[ 2*param->get_inner_matrix_size()];
-		second1 = new double[2*param->get_inner_matrix_size()];
-		second2 = new double[2*param->get_inner_matrix_size()];
-		third1 = new double[ 2*param->get_inner_matrix_size()];
-		third2 = new double[ 2*param->get_inner_matrix_size()];
-	}
-
-	~TriangleResult()
-	{
-		delete[] first1 ;
-		delete[] first2 ;
-		delete[] second1;
-		delete[] second2;
-		delete[] third1 ;
-		delete[] third2 ;
-	}
-
-	void setOffset(int part_index)
-	{
-		offset = part_index * chunk;
-	}
 };
 
 struct VertexData
@@ -368,22 +243,22 @@ struct VertexData
 template<typename CharT>
 class DecimalSeparator : public std::numpunct<CharT>
 {
-public:
+	public:
 
-	DecimalSeparator(CharT Separator)
-		: m_Separator(Separator)
-	{
-	}
+		DecimalSeparator(CharT Separator)
+			: m_Separator(Separator)
+		{
+		}
 
-protected:
+	protected:
 
-	CharT do_decimal_point()const
-	{
-		return m_Separator;
-	}
+		CharT do_decimal_point()const
+		{
+			return m_Separator;
+		}
 
-private:
-	CharT m_Separator;
+	private:
+		CharT m_Separator;
 };
 
 struct ComputeResults
@@ -413,7 +288,6 @@ void write_openmp_stress_test_info(std::string &filename, int threadNumber, int 
 
 
 extern double h_analytSolut(double t, double x, double y );
-extern float get_quad_coord(TriangleResult* result, ComputeParameters* p);
 extern double h_f_function(ComputeParameters p, const int currentTimeLevel, const int i, const int j);
 extern double h_f_function(ComputeParameters* p, const int currentTimeLevel, const int i, const int j);
 
@@ -440,351 +314,350 @@ extern float solve_cuda_params(ComputeParameters p);
 extern double d_solByEqualVolumes(ComputeParameters p);
 
 extern void h_quadrAngleType(ComputeParameters* p, double* first_x1, double* second_x1, double* third_x1, double* first_x2, double* 
-	second_x2, double* third_x2,
-	double* first_y1, double* second_y1, double* third_y1, double* first_y2, double* second_y2, double* third_y2);
+		second_x2, double* third_x2,
+		double* first_y1, double* second_y1, double* third_y1, double* first_y2, double* second_y2, double* third_y2);
 
 
 
 extern double d_integUnderUnunifTr(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau,
-	int iCurrTL, //   -  Index of current time layer.
-	//
-	double * firVer, //   -  First vertex of triangle.
-	double * secVer, //   -  Second vertex of triangle.
-	double * thiVer, //   -  Third vertex of triangle.
-	//
-	const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	//
-	double * rhoInPrevTL_asV,
-	int ii, int jj );
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		double par_b, //   -  Item of second parameter from "u_funcion".
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double tau,
+		int iCurrTL, //   -  Index of current time layer.
+		//
+		double * firVer, //   -  First vertex of triangle.
+		double * secVer, //   -  Second vertex of triangle.
+		double * thiVer, //   -  Third vertex of triangle.
+		//
+		const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+		int numOfOXSt, //   -  Number of OX steps.
+		//
+		const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+		int numOfOYSt, //   -  Number of OY steps.
+		//
+		double * rhoInPrevTL_asV,
+		int ii, int jj );
 
 extern double integUnderUnunifTr(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau,
-	int iCurrTL, //   -  Index of current time layer.
-	//
-	double * firVer, //   -  First vertex of triangle.
-	double * secVer, //   -  Second vertex of triangle.
-	double * thiVer, //   -  Third vertex of triangle.
-	//
-	const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	//
-	double * rhoInPrevTL_asV,
-	int ii, int jj ); //!!!!!!!!!!!!!!!!!!!
-
-double* GetIntegrGpuResult(ComputeParameters p, TriangleResult triangles, double *rhoInPrevTL_asV, int gridSize, int blockSize, int chunk);
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		double par_b, //   -  Item of second parameter from "u_funcion".
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double tau,
+		int iCurrTL, //   -  Index of current time layer.
+		//
+		double * firVer, //   -  First vertex of triangle.
+		double * secVer, //   -  Second vertex of triangle.
+		double * thiVer, //   -  Third vertex of triangle.
+		//
+		const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+		int numOfOXSt, //   -  Number of OX steps.
+		//
+		const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+		int numOfOYSt, //   -  Number of OY steps.
+		//
+		double * rhoInPrevTL_asV,
+		int ii, int jj ); //!!!!!!!!!!!!!!!!!!!
 
 
 extern double solByEqualVolumes(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau, //   -  Time step.
-	int numOfTSt, //   -  A number of time steps.
-	//
-	double *masOX, //   -  Massive of OX points. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	double *masOY, //   -  Massive of OY points. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	//
-	int numOfSolOrd, //   -  For print only. Solution order which we want to get.
-	//
-	double *rhoInCurrTL_asV ); //   -  Rho (solution) in Last Time Level which we will compute.
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		double par_b, //   -  Item of second parameter from "u_funcion".
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double tau, //   -  Time step.
+		int numOfTSt, //   -  A number of time steps.
+		//
+		double *masOX, //   -  Massive of OX points. Dimension = numOfOXSt +1.
+		int numOfOXSt, //   -  Number of OX steps.
+		//
+		double *masOY, //   -  Massive of OY points. Dimension = numOfOYSt +1.
+		int numOfOYSt, //   -  Number of OY steps.
+		//
+		int numOfSolOrd, //   -  For print only. Solution order which we want to get.
+		//
+		double *rhoInCurrTL_asV ); //   -  Rho (solution) in Last Time Level which we will compute.
 
-extern double* solve_cpu_test(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau, //   -  Time step.
-	int numOfTSt, //   -  A number of time steps.
-	//
-	double * masOX, //   -  Massive of OX nodes. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	double * masOY, //   -  Massive of OY nodes. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	int gridStep
-);
+		extern double* solve_cpu_test(
+				double par_a, //   -  Item of left and right setback (parameter "a" in test).
+				double par_b, //   -  Item of second parameter from "u_funcion".
+				//
+				double lbDom, //   -  Left and right boundaries of rectangular domain.
+				double rbDom,
+				//
+				double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+				double ubDom,
+				//
+				double tau, //   -  Time step.
+				int numOfTSt, //   -  A number of time steps.
+				//
+				double * masOX, //   -  Massive of OX nodes. Dimension = numOfOXSt +1.
+				int numOfOXSt, //   -  Number of OX steps.
+				//
+				double * masOY, //   -  Massive of OY nodes. Dimension = numOfOYSt +1.
+				int numOfOYSt, //   -  Number of OY steps.
+				int gridStep,
+				bool isComputeDiff);
 
-extern double spaceVolumeInPrevTL(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau,
-	double iCurrTL, //   -  Index of current time layer. Necessary for velocity.
-	//
-	int iOfOXN, //   -  Index of current OX node.
-	const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	int iOfOYN, //   -  Index of current OY node.
-	const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.	
+		extern double spaceVolumeInPrevTL(
+				double par_a, //   -  Item of left and right setback (parameter "a" in test).
+				double par_b, //   -  Item of second parameter from "u_funcion".
+				//
+				double lbDom, //   -  Left and right boundaries of rectangular domain.
+				double rbDom,
+				//
+				double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+				double ubDom,
+				//
+				double tau,
+				double iCurrTL, //   -  Index of current time layer. Necessary for velocity.
+				//
+				int iOfOXN, //   -  Index of current OX node.
+				const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+				int numOfOXSt, //   -  Number of OX steps.
+				//
+				int iOfOYN, //   -  Index of current OY node.
+				const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+				int numOfOYSt, //   -  Number of OY steps.	
 
-	double * rhoInPrevTL_asV );
+				double * rhoInPrevTL_asV );
 
-extern double f_function( //   -  It's item of right part of differential equation.
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau,
-	int iCurrTL, //   -  Index of current time layer.
-	//
-	int iOfOXN, //   -  Index of current OX node.
-	const double *masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps (segments).
-	//
-	int iOfOYN, //   -  Index of current OY node.
-	const double *masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-	int numOfOYSt ); //   -  Number of OY steps (segments).
+				extern double f_function( //   -  It's item of right part of differential equation.
+						double par_a, //   -  Item of left and right setback (parameter "a" in test).
+						double par_b, //   -  Item of second parameter from "u_funcion".
+						//
+						double lbDom, //   -  Left and right boundaries of rectangular domain.
+						double rbDom,
+						//
+						double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
+						double ubDom,
+						//
+						double tau,
+						int iCurrTL, //   -  Index of current time layer.
+						//
+						int iOfOXN, //   -  Index of current OX node.
+						const double *masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+						int numOfOXSt, //   -  Number of OX steps (segments).
+						//
+						int iOfOYN, //   -  Index of current OY node.
+						const double *masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+						int numOfOYSt ); //   -  Number of OY steps (segments).
 
 extern double rightBound(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double t,
-	double y );
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double t,
+		double y );
 
 extern double bottonBound(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double t,
-	double x );
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double t,
+		double x );
 
 extern double upperBound(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double t,
-	double x );
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double t,
+		double x );
 
 extern double leftBound(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double t,
-	double y );
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double t,
+		double y );
 
 extern double integUnderUnunifTr(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau,
-	int iCurrTL, //   -  Index of current time layer.
-	//
-	double * firVer, //   -  First vertex of triangle.
-	double * secVer, //   -  Second vertex of triangle.
-	double * thiVer, //   -  Third vertex of triangle.
-	//
-	const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	//
-	double * rhoInPrevTL );
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		double par_b, //   -  Item of second parameter from "u_funcion".
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double tau,
+		int iCurrTL, //   -  Index of current time layer.
+		//
+		double * firVer, //   -  First vertex of triangle.
+		double * secVer, //   -  Second vertex of triangle.
+		double * thiVer, //   -  Third vertex of triangle.
+		//
+		const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+		int numOfOXSt, //   -  Number of OX steps.
+		//
+		const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+		int numOfOYSt, //   -  Number of OY steps.
+		//
+		double * rhoInPrevTL );
 
-extern int quadrAngleType(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau,
-	double iCurrTL, //   -  Index of current time layer. Necessary for velocity.
-	//
-	int iOfOXN, //   -  Index of current OX node.
-	const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	int iOfOYN, //   -  Index of current OY node.
-	const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	//
-	double * firVfirT, //   -  First vertex of first triangle.
-	double * secVfirT, //   -  Second vertex of first triangle.
-	double * thiVfirT, //   -  Third vertex of first triangle.
-	//
-	double * firVsecT, //   -  First vertex of second triangle.
-	double * secVsecT, //   -  Second vertex of second triangle.
-	double * thiVsecT ); //   -  Third vertex of second triangle.
+		extern int quadrAngleType(
+				double par_a, //   -  Item of left and right setback (parameter "a" in test).
+				double par_b, //   -  Item of second parameter from "u_funcion".
+				//
+				double lbDom, //   -  Left and right boundaries of rectangular domain.
+				double rbDom,
+				//
+				double bbDom, //   -  bottom and upper boundaries of rectangular domain.
+				double ubDom,
+				//
+				double tau,
+				double iCurrTL, //   -  Index of current time layer. Necessary for velocity.
+				//
+				int iOfOXN, //   -  Index of current OX node.
+				const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+				int numOfOXSt, //   -  Number of OX steps.
+				//
+				int iOfOYN, //   -  Index of current OY node.
+				const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+				int numOfOYSt, //   -  Number of OY steps.
+				//
+				double * firVfirT, //   -  First vertex of first triangle.
+				double * secVfirT, //   -  Second vertex of first triangle.
+				double * thiVfirT, //   -  Third vertex of first triangle.
+				//
+				double * firVsecT, //   -  First vertex of second triangle.
+				double * secVsecT, //   -  Second vertex of second triangle.
+				double * thiVsecT ); //   -  Third vertex of second triangle.
 
 extern double integUnderUnunifTr(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau,
-	int iCurrTL, //   -  Index of current time layer.
-	//
-	double * firVer, //   -  First vertex of triangle.
-	double * secVer, //   -  Second vertex of triangle.
-	double * thiVer, //   -  Third vertex of triangle.
-	//
-	const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	//
-	double * rhoInPrevTL );
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		double par_b, //   -  Item of second parameter from "u_funcion".
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  Bottom and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double tau,
+		int iCurrTL, //   -  Index of current time layer.
+		//
+		double * firVer, //   -  First vertex of triangle.
+		double * secVer, //   -  Second vertex of triangle.
+		double * thiVer, //   -  Third vertex of triangle.
+		//
+		const double * masOX, //   -  Massive of OX steps. Dimension = numOfOXSt +1.
+		int numOfOXSt, //   -  Number of OX steps.
+		//
+		const double * masOY, //   -  Massive of OY steps. Dimension = numOfOYSt +1.
+		int numOfOYSt, //   -  Number of OY steps.
+		//
+		double * rhoInPrevTL );
 
-extern
-	double itemOfInteg_2SpecType_optimized(
-		double Py,
-		double Qy,
-		//
-		double alpha,
-		//
-		double a,
-		double b,
-		double betta );
+		extern
+		double itemOfInteg_2SpecType_optimized(
+				double Py,
+				double Qy,
+				//
+				double alpha,
+				//
+				double a,
+				double b,
+				double betta );
 
 extern double analytSolut(
-	double par_a,
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double t, double x, double y );
-extern float solve_at_gpu(ComputeParameters* p, bool tl1);
+		double par_a,
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  bottom and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double t, double x, double y );
+extern float solve_at_gpu(ComputeParameters* p, bool tl1, bool compute_diff = false);
+
 
 extern void cuda_solve(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	double par_b, //   -  Item of second parameter from "u_funcion".
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  bottom and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	double tau, //   -  Time step.
-	int numOfTSt, //   -  A number of time steps.
-	//
-	double * masOX, //   -  Massive of OX nodes. Dimension = numOfOXSt +1.
-	int numOfOXSt, //   -  Number of OX steps.
-	//
-	double * masOY, //   -  Massive of OY nodes. Dimension = numOfOYSt +1.
-	int numOfOYSt, //   -  Number of OY steps.
-	//
-	bool isTimeStShBeChan, //   -  Is time step should be change?
-	bool isGridStShBeChan, //   -  Is grid step should be change?
-	//
-	int numOfGrStepLayer ); //   -  How many computations with different grid steps we want to make.
+		double par_a, //   -  Item of left and right setback (parameter "a" in test).
+		double par_b, //   -  Item of second parameter from "u_funcion".
+		//
+		double lbDom, //   -  Left and right boundaries of rectangular domain.
+		double rbDom,
+		//
+		double bbDom, //   -  bottom and upper boundaries of rectangular domain.
+		double ubDom,
+		//
+		double tau, //   -  Time step.
+		int numOfTSt, //   -  A number of time steps.
+		//
+		double * masOX, //   -  Massive of OX nodes. Dimension = numOfOXSt +1.
+		int numOfOXSt, //   -  Number of OX steps.
+		//
+		double * masOY, //   -  Massive of OY nodes. Dimension = numOfOYSt +1.
+		int numOfOYSt, //   -  Number of OY steps.
+		//
+		bool isTimeStShBeChan, //   -  Is time step should be change?
+		bool isGridStShBeChan, //   -  Is grid step should be change?
+		//
+		int numOfGrStepLayer ); //   -  How many computations with different grid steps we want to make.
 
-extern double initDataOfSol(
-	double par_a, //   -  Item of left and right setback (parameter "a" in test).
-	//
-	double lbDom, //   -  Left and right boundaries of rectangular domain.
-	double rbDom,
-	//
-	double bbDom, //   -  Botton and upper boundaries of rectangular domain.
-	double ubDom,
-	//
-	int iOfOXN, //   -  Index of current OX node.
-	const double *masOX, //   -  Massive of abscissa grid steps. Dimension = numOfOxSt +1.
-	//
-	int iOfOYN, //   -  Index of current OY node.
-	const double *masOY ); //   -  Massive of ordinate grid steps. Dimension = numOfOySt +1.
+		extern double initDataOfSol(
+				double par_a, //   -  Item of left and right setback (parameter "a" in test).
+				//
+				double lbDom, //   -  Left and right boundaries of rectangular domain.
+				double rbDom,
+				//
+				double bbDom, //   -  Botton and upper boundaries of rectangular domain.
+				double ubDom,
+				//
+				int iOfOXN, //   -  Index of current OX node.
+				const double *masOX, //   -  Massive of abscissa grid steps. Dimension = numOfOxSt +1.
+				//
+				int iOfOYN, //   -  Index of current OY node.
+				const double *masOY ); //   -  Massive of ordinate grid steps. Dimension = numOfOySt +1.
 
 extern double normOfMatrAtL1_asV(
-	const double *masOX, //   -  Massive of OX grid nodes. Dimension = dimOX.
-	int dimOX,
-	//
-	const double *masOY, //   -  Massive of OY grid nodes. Dimension = dimOY.
-	int dimOY,
-	//
-	double * mat_asV );
+		const double *masOX, //   -  Massive of OX grid nodes. Dimension = dimOX.
+		int dimOX,
+		//
+		const double *masOY, //   -  Massive of OY grid nodes. Dimension = dimOY.
+		int dimOY,
+		//
+		double * mat_asV );
 
 extern double u_function(double par_b, double t, double x, double y);
 extern double v_function(double lbDom, double rbDom, double bbDom, double ubDom, double t, double x, double y );
